@@ -1,14 +1,18 @@
 package com.ktb.auth.domain;
 
 import com.ktb.common.domain.BaseTimeEntity;
+import com.ktb.file.domain.File;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -39,7 +43,7 @@ import lombok.ToString;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(exclude = {"oauthConnections"})
+@ToString(exclude = {"profileImage", "oauthConnections"})
 public class UserAccount extends BaseTimeEntity {
 
     @Id
@@ -57,6 +61,10 @@ public class UserAccount extends BaseTimeEntity {
     @Column(name = "account_nick_nm", nullable = false, length = 200)
     private String nickname;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "file_id")
+    private File profileImage;
+
     @Column(name = "account_last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -64,12 +72,13 @@ public class UserAccount extends BaseTimeEntity {
     private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "account")
-    private final List<UserOAuth> oauthConnections = new ArrayList<>();
+    private List<UserOAuth> oauthConnections = new ArrayList<>();
 
     @Builder
-    private UserAccount(String email, String nickname) {
+    private UserAccount(String email, String nickname, File profileImage) {
         this.email = email;
         this.nickname = nickname;
+        this.profileImage = profileImage;
         this.status = AccountStatus.ACTIVE;
     }
 
@@ -92,6 +101,10 @@ public class UserAccount extends BaseTimeEntity {
             throw new IllegalArgumentException("닉네임은 200자를 초과할 수 없습니다.");
         }
         this.nickname = newNickname;
+    }
+
+    public void updateProfileImage(File newImage) {
+        this.profileImage = newImage;
     }
 
     public void updateStatus(AccountStatus newStatus) {
