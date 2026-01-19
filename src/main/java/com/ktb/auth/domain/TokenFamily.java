@@ -1,8 +1,6 @@
 package com.ktb.auth.domain;
 
 import com.ktb.common.domain.BaseTimeEntity;
-import com.nimbusds.oauth2.sdk.token.RefreshToken;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,11 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -48,7 +43,7 @@ import lombok.ToString;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@ToString(exclude = {"account", "refreshTokens"})
+@ToString(exclude = {"account"})
 public class TokenFamily extends BaseTimeEntity {
 
     @Id
@@ -85,11 +80,6 @@ public class TokenFamily extends BaseTimeEntity {
     @Column(name = "family_revoked_reason", length = 100)
     private RevokeReason revokedReason;
 
-    @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RefreshToken> refreshTokens = new ArrayList<>();
-
-    // === 생성 메서드 ===
-
     @Builder
     private TokenFamily(
             UserAccount account,
@@ -120,11 +110,6 @@ public class TokenFamily extends BaseTimeEntity {
                 .build();
     }
 
-    // === 비즈니스 로직 ===
-
-    /**
-     * 토큰 사용 시 마지막 사용 시각 갱신
-     */
     public void updateLastUsed() {
         if (isRevoked()) {
             throw new IllegalStateException("무효화된 Family입니다.");
@@ -135,40 +120,20 @@ public class TokenFamily extends BaseTimeEntity {
         this.lastUsedAt = LocalDateTime.now();
     }
 
-    /**
-     * Family 무효화
-     */
     public void revoke(RevokeReason reason) {
         this.revoked = true;
         this.revokedAt = LocalDateTime.now();
         this.revokedReason = reason;
     }
 
-    /**
-     * Refresh Token 추가
-     */
-    public void addRefreshToken(RefreshToken token) {
-        refreshTokens.add(token);
-        token.setFamily(this);
-    }
-
-    /**
-     * 무효화 여부 확인
-     */
     public boolean isRevoked() {
         return revoked;
     }
 
-    /**
-     * 만료 여부 확인
-     */
     public boolean isExpired() {
         return expiresAt.isBefore(LocalDateTime.now());
     }
 
-    /**
-     * 유효 여부 확인
-     */
     public boolean isValid() {
         return !isRevoked() && !isExpired();
     }
