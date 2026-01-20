@@ -123,6 +123,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
             return new OAuthLoginResult(
                     accessToken,
+                    refreshToken,
                     new OAuthLoginResult.UserInfo(account.getNickname(), isNewUser)
             );
 
@@ -173,7 +174,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
         log.info("Token Refresh 성공: userId={}, familyUuid={}", claims.userId(), claims.familyUuid());
 
-        return new TokenRefreshResult(newAccessToken, 600); // 10분 (초 단위)
+        return new TokenRefreshResult(newAccessToken, newRefreshToken, 600); // 10분 (초 단위)
     }
 
     @Override
