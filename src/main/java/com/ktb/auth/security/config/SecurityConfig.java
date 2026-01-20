@@ -28,7 +28,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 비활성화 (JWT 사용)
+                // CSRF 설정
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // CORS 설정

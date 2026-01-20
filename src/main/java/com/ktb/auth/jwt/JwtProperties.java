@@ -35,4 +35,9 @@ public class JwtProperties {
      * JWT Issuer
      */
     private String issuer = "QFeed";
+
+    /**
+     * Refresh Token 쿠키 이름
+     */
+    private String refreshTokenCookieName = "refreshToken";
 }
