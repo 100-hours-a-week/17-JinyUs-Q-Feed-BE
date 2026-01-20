@@ -1,9 +1,13 @@
 package com.ktb.auth.controller;
 
 import com.ktb.auth.dto.AuthorizationUrlResult;
+import com.ktb.auth.dto.LogoutAllResponse;
+import com.ktb.auth.dto.OAuthLoginResponseDto;
 import com.ktb.auth.dto.OAuthLoginResult;
+import com.ktb.auth.dto.TokenRefreshResponseDto;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
+import com.ktb.auth.service.CookieService;
 import com.ktb.auth.service.OAuthApplicationService;
 import com.ktb.common.dto.ApiResponse;
 import jakarta.servlet.http.Cookie;
@@ -31,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OAuthController {
 
     private final OAuthApplicationService oauthApplicationService;
+    private final CookieService cookieService;
 
     /**
      * OAuth 인증 URL 생성
@@ -52,7 +57,7 @@ public class OAuthController {
      * GET /api/v1/auth/oauth/{provider}/callback?code=xxx&state=yyy
      */
     @GetMapping("/oauth/{provider}/callback")
-    public ResponseEntity<ApiResponse<OAuthLoginResult>> handleCallback(
+    public ResponseEntity<ApiResponse<OAuthLoginResponseDto>> handleCallback(
             @PathVariable String provider,
             @RequestParam String code,
             @RequestParam String state,
@@ -66,11 +71,18 @@ public class OAuthController {
                 provider, code, state, deviceInfo, clientIp
         );
 
-        // Refresh Token을 HttpOnly 쿠키로 설정 (OAuthApplicationServiceImpl에서 반환된 경우)
-        // 현재는 OAuthLoginResult에 refreshToken이 없으므로 추가 구현 필요
+        // Access Token을 Response Header로 설정
+        response.setHeader("Authorization", "Bearer " + result.accessToken());
+
+        // Refresh Token을 HTTP-only 쿠키로 설정
+        Cookie refreshTokenCookie = cookieService.createRefreshTokenCookie(result.refreshToken());
+        response.addCookie(refreshTokenCookie);
+
+        // 응답에는 User 정보만 포함 (토큰 정보 제외)
+        OAuthLoginResponseDto responseDto = new OAuthLoginResponseDto(result.user());
 
         return ResponseEntity.ok(
-                new ApiResponse<>("oauth_login_success", result)
+                new ApiResponse<OAuthLoginResponseDto>("oauth_login_success", responseDto)
         );
     }
 
@@ -79,7 +91,7 @@ public class OAuthController {
      * POST /api/v1/auth/tokens
      */
     @PostMapping("/tokens")
-    public ResponseEntity<ApiResponse<TokenRefreshResult>> refreshTokens(
+    public ResponseEntity<ApiResponse<TokenRefreshResponseDto>> refreshTokens(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
@@ -90,8 +102,18 @@ public class OAuthController {
 
         TokenRefreshResult result = oauthApplicationService.refreshTokens(refreshToken);
 
+        // Access Token을 Response Header로 설정
+        response.setHeader("Authorization", "Bearer " + result.accessToken());
+
+        // 새로운 Refresh Token을 HTTP-only 쿠키로 설정
+        Cookie newRefreshTokenCookie = cookieService.createRefreshTokenCookie(result.refreshToken());
+        response.addCookie(newRefreshTokenCookie);
+
+        // 응답에는 expiresIn만 포함 (토큰 정보 제외)
+        TokenRefreshResponseDto responseDto = new TokenRefreshResponseDto(result.expiresIn());
+
         return ResponseEntity.ok(
-                new ApiResponse<>("token_refresh_success", result)
+                new ApiResponse<TokenRefreshResponseDto>("token_refresh_success", responseDto)
         );
     }
 
@@ -115,10 +137,8 @@ public class OAuthController {
         }
 
         // Refresh Token 쿠키 제거
-        Cookie cookie = new Cookie("refreshToken", "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
+        Cookie expiredCookie = cookieService.createExpiredRefreshTokenCookie();
+        response.addCookie(expiredCookie);
 
         return ResponseEntity.ok(
                 new ApiResponse<>("logout_success", null)
@@ -142,10 +162,8 @@ public class OAuthController {
         int revokedCount = oauthApplicationService.logoutAll(principal.getAccount().getId());
 
         // Refresh Token 쿠키 제거
-        Cookie cookie = new Cookie("refreshToken", "");
-        cookie.setMaxAge(0);
-        cookie.setPath("/");
-        response.addCookie(cookie);
+        Cookie expiredCookie = cookieService.createExpiredRefreshTokenCookie();
+        response.addCookie(expiredCookie);
 
         return ResponseEntity.ok(
                 new ApiResponse<>("all_sessions_logged_out", new LogoutAllResponse(revokedCount))
@@ -173,9 +191,4 @@ public class OAuthController {
         }
         return ip;
     }
-
-    /**
-     * 전체 로그아웃 응답
-     */
-    public record LogoutAllResponse(int revokedSessionsCount) {}
 }
