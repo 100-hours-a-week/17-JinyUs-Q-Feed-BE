@@ -10,6 +10,7 @@ import com.ktb.auth.dto.AuthorizationUrlResult;
 import com.ktb.auth.dto.KakaoUserInfo;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
+import com.ktb.auth.dto.UserInfo;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
@@ -124,7 +125,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
             return new OAuthLoginResult(
                     accessToken,
                     refreshToken,
-                    new OAuthLoginResult.UserInfo(account.getNickname(), isNewUser)
+                    new UserInfo(account.getNickname(), isNewUser)
             );
 
         } catch (Exception e) {
