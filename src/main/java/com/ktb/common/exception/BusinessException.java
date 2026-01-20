@@ -1,9 +1,7 @@
 package com.ktb.common.exception;
 
 import com.ktb.common.domain.ErrorCode;
-import lombok.Getter;
 
-@Getter
 public abstract class BusinessException extends RuntimeException {
 
     private final ErrorCode errorCode;
@@ -16,6 +14,10 @@ public abstract class BusinessException extends RuntimeException {
     protected BusinessException(ErrorCode errorCode, String customMessage) {
         super(customMessage);
         this.errorCode = errorCode;
+    }
+
+    public ErrorCode getErrorCode() {
+        return errorCode;
     }
 
     public int getStatus() {
