@@ -88,7 +88,8 @@ class OAuthApplicationServiceTest {
         // ReflectionTestUtils를 사용하여 @Value 필드 설정
         ReflectionTestUtils.setField(oauthApplicationService, "kakaoAuthorizationUri", "https://kauth.kakao.com/oauth/authorize");
         ReflectionTestUtils.setField(oauthApplicationService, "kakaoClientId", "test-client-id");
-        ReflectionTestUtils.setField(oauthApplicationService, "kakaoRedirectUri", "http://localhost:8080/login/oauth2/code/{registrationId}");
+        ReflectionTestUtils.setField(oauthApplicationService, "kakaoRedirectUri", "http://localhost:8080/login/oauth2/code/kakao");
+        ReflectionTestUtils.setField(oauthApplicationService, "kakaoScopes", List.of("profile_nickname", "profile_image", "account_email"));
     }
 
     @Test
