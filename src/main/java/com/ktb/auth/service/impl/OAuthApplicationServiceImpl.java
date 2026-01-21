@@ -54,6 +54,9 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
     @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
     private String kakaoRedirectUri;
 
+    @Value("${spring.security.oauth2.client.registration.kakao.scope}")
+    private List<String> kakaoScopes;
+
     @Override
     public AuthorizationUrlResult getAuthorizationUrl(String provider) {
         if (!"kakao".equalsIgnoreCase(provider)) {
@@ -63,13 +66,17 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
         // State 생성
         String state = oauthDomainService.generateAndStoreState(provider);
 
+        // Scope 문자열 생성
+        String scopeParam = String.join(",", kakaoScopes);
+
         // Kakao 인증 URL 생성
         String redirectUrl = String.format(
-                "%s?client_id=%s&redirect_uri=%s&response_type=code&state=%s&scope=profile_nickname,profile_image,account_email",
+                "%s?client_id=%s&redirect_uri=%s&response_type=code&state=%s&scope=%s",
                 kakaoAuthorizationUri,
                 kakaoClientId,
-                kakaoRedirectUri.replace("{baseUrl}", "http://localhost:8080").replace("{registrationId}", "kakao"),
-                state
+                kakaoRedirectUri,
+                state,
+                scopeParam
         );
 
         return new AuthorizationUrlResult(redirectUrl);
