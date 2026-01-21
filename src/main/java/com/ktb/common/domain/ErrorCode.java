@@ -32,12 +32,29 @@ public enum ErrorCode {
     QUESTION_ALREADY_DELETED(400, "Q003", "이미 삭제된 질문입니다"),
     QUESTION_INVALID_CONTENT(400, "Q004", "질문 내용이 올바르지 않습니다"),
 
+    // ==================== Answer 관련 ====================
+    ANSWER_NOT_FOUND(404, "A001", "답변을 찾을 수 없습니다"),
+    ANSWER_ACCESS_DENIED(403, "A002", "답변에 대한 접근 권한이 없습니다"),
+    DUPLICATE_ANSWER(409, "A003", "이미 해당 질문에 대한 답변이 존재합니다"),
+    ANSWER_INVALID_CONTENT(400, "A004", "답변 내용이 올바르지 않습니다"),
+    ANSWER_INVALID_STATUS_TRANSITION(400, "A005", "허용되지 않는 답변 상태 전이입니다"),
+    ANSWER_TYPE_REQUIRED(400, "A006", "답변 유형은 필수입니다"),
+
+    // ==================== Hashtag 관련 ====================
+    HASHTAG_NAME_REQUIRED(400, "H001", "해시태그 이름은 필수입니다"),
+    HASHTAG_NAME_TOO_LONG(400, "H002", "해시태그 이름은 100자를 초과할 수 없습니다"),
+    HASHTAG_NAME_CONTAINS_SPACE(400, "H003", "해시태그 이름에 공백이 포함될 수 없습니다"),
+
+    // ==================== Metric 관련 ====================
+    METRIC_NAME_REQUIRED(400, "M001", "평가 지표 이름은 필수입니다"),
+    METRIC_NAME_TOO_LONG(400, "M002", "평가 지표 이름은 100자를 초과할 수 없습니다"),
+    METRIC_SCORE_INVALID_RANGE(400, "M003", "평가 점수는 0-100 사이여야 합니다"),
+
     // ==================== Search 관련 ====================
     SEARCH_KEYWORD_TOO_SHORT(400, "S001", "검색어는 너무 짧습니다"),
     SEARCH_FAILED(500, "S002", "검색에 실패했습니다"),
 
     // ==================== 공통 ====================
-    // ==================== 공통 (COMMON) ====================
     INVALID_INPUT(400, "C001", "입력값이 올바르지 않습니다"),
     INTERNAL_SERVER_ERROR(500, "C002", "서버 내부 오류가 발생했습니다"),
     FORBIDDEN(403, "C004", "접근 권한이 없습니다"),
