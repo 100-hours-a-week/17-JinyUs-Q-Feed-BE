@@ -38,6 +38,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                // H2 콘솔 iframe 허용
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+
                 // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // Public 엔드포인트
@@ -45,7 +48,8 @@ public class SecurityConfig {
                                 "/",
                                 "/error",
                                 "/actuator/health",
-                                "/api/v1/auth/**"
+                                "/api/v1/auth/**",
+                                "/h2-console/**"
                         ).permitAll()
 
                         // Actuator Admin 전용
