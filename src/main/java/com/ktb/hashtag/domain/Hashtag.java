@@ -17,11 +17,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/**
- * 해시태그 엔티티
- * - 중복 방지를 위한 unique constraint
- * - use_yn을 통한 Soft Disable 지원
- */
 @Entity
 @Table(
         name = "HASHTAG",
