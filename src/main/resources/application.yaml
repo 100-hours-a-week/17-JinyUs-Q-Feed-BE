@@ -58,6 +58,16 @@ aws:
     access-key: ${AWS_ACCESS_KEY_ID}
     secret-key: ${AWS_SECRET_ACCESS_KEY}
 
+ai:
+  feedback:
+    base-url: ${AI_FEEDBACK_BASE_URL}
+    endpoint: /api/v1/feedback/evaluate
+    timeout: 60000  # 60초
+  stt:
+    base-url: ${AI_STT_BASE_URL}
+    endpoint: /ai/stt
+    timeout: 60000  # 60초
+
 management:
   server:
     port: 8081
