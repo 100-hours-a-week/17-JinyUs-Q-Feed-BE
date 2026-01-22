@@ -19,4 +19,14 @@ public interface QuestionHashtagRepository extends JpaRepository<QuestionHashtag
     List<String> findKeywordNamesByQuestionId(@Param("questionId") Long questionId);
 
     boolean existsByQuestion_IdAndHashtag_NameIgnoreCase(Long questionId, String name);
+
+    void deleteByQuestion_Id(Long questionId);
+
+    @Query("""
+            SELECT qh.question.id AS questionId, h.name AS keyword
+            FROM QuestionHashtag qh
+            JOIN qh.hashtag h
+            WHERE qh.question.id IN :questionIds
+            """)
+    List<QuestionKeywordRow> findKeywordRowsByQuestionIdIn(@Param("questionIds") List<Long> questionIds);
 }
