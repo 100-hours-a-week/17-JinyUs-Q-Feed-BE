@@ -50,6 +50,14 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
 
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:qfeed-files}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
+
 management:
   server:
     port: 8081
