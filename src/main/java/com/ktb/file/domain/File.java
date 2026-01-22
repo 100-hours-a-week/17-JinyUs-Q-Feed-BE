@@ -95,6 +95,10 @@ public class File extends BaseTimeEntity {
     @Column(name = "file_deleted_at")
     private LocalDateTime fileDeletedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "upload_status", nullable = false, length = 20)
+    private FileUploadStatus uploadStatus = FileUploadStatus.UPLOADED;
+
     @Builder
     private File(
             String originalName,
@@ -106,7 +110,8 @@ public class File extends BaseTimeEntity {
             String mimeType,
             StorageType storageType,
             FileCategory category,
-            String url
+            String url,
+            FileUploadStatus uploadStatus
     ) {
         validateFile(originalName, storedName, path, extension, size, mimeType);
 
@@ -120,7 +125,12 @@ public class File extends BaseTimeEntity {
         this.storageType = storageType != null ? storageType : StorageType.LOCAL;
         this.category = category;
         this.url = url;
+        this.uploadStatus = uploadStatus != null ? uploadStatus : FileUploadStatus.UPLOADED;
         this.fileCreatedAt = LocalDateTime.now();
+    }
+
+    public void setUploadStatus(FileUploadStatus uploadStatus) {
+        this.uploadStatus = uploadStatus;
     }
 
     public static File create(
