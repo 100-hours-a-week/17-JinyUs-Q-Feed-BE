@@ -8,6 +8,7 @@ import com.ktb.answer.dto.AnswerSubmitCommand;
 import com.ktb.answer.dto.AnswerSubmitResult;
 import com.ktb.answer.dto.FeedbackResult;
 import com.ktb.answer.dto.ImmediateFeedbackResult;
+import com.ktb.answer.dto.response.AnswerSubmitResponse.ImmediateFeedback;
 import com.ktb.answer.exception.AnswerAccessDeniedException;
 import com.ktb.answer.exception.AnswerInvalidContentException;
 import com.ktb.answer.exception.AnswerNotFoundException;
@@ -15,7 +16,7 @@ import com.ktb.answer.repository.AnswerRepository;
 import com.ktb.answer.service.AnswerApplicationService;
 import com.ktb.answer.service.ImmediateFeedbackService;
 import com.ktb.auth.domain.UserAccount;
-import com.ktb.auth.repository.UserAccountRepository;
+import com.ktb.auth.service.UserAccountService;
 import com.ktb.file.exception.FileAlreadyDeletedException;
 import com.ktb.file.exception.FileExtensionNotAllowedException;
 import com.ktb.file.exception.FileNotFoundException;
@@ -23,9 +24,10 @@ import com.ktb.file.exception.FileSizeExceededException;
 import com.ktb.file.exception.FileStorageMigrationException;
 import com.ktb.question.domain.Question;
 import com.ktb.question.domain.QuestionCategory;
+import com.ktb.question.dto.QuestionDetailResponse;
 import com.ktb.question.exception.QuestionDisabledException;
 import com.ktb.question.exception.QuestionNotFoundException;
-import com.ktb.question.repository.QuestionRepository;
+import com.ktb.question.service.QuestionService;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,13 +38,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 @Slf4j
 public class AnswerApplicationServiceImpl implements AnswerApplicationService {
 
     private final AnswerRepository answerRepository;
-    private final QuestionRepository questionRepository;
-    private final UserAccountRepository userAccountRepository;
+    private final QuestionService questionService;
+    private final UserAccountService userAccountService;
     private final ImmediateFeedbackService immediateFeedbackService;
 
     @Override
@@ -89,29 +90,23 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
             FileNotFoundException, FileAlreadyDeletedException, FileStorageMigrationException {
 
         // TODO: 구현 필요
-        // 1. 입력 검증 (answer_text 또는 audio_file 중 최소 1개 필수)
-        // 2. Question 존재 및 활성화 검증
-        // 3. 파일 업로드 처리 (있는 경우)
-        // 4. STT 처리 (음성 파일인 경우)
-        // 5. Answer 엔티티 생성 및 저장
-        // 6. 즉각 피드백 생성 (동기)
-        // 7. AI 피드백 요청 이벤트 발행 (비동기)
-        // 8. 결과 반환
+        // 파일 업로드 처리 (있는 경우)
+        // STT 처리 (음성 파일인 경우)
+        // 즉각 피드백 생성 (동기)
+        // AI 피드백 요청 이벤트 발행 (비동기)
+        // 결과 반환
 
         log.info("Submitting answer for questionId: {}, accountId: {}", command.questionId(), accountId);
 
-        validateSubmitCommand(command);
-
-        Question question = findQuestionById(command.questionId());
+        QuestionDetailResponse question = questionService.getQuestionDetail(command.questionId());
         validateQuestionEnabled(question);
 
-        UserAccount account = userAccountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+        UserAccount account = userAccountService.findById(accountId);
 
         // TODO: 파일 업로드 및 STT 처리
 
         Answer answer = Answer.create(
-                question,
+                Question.createWithQuestionId(question.questionId()),
                 account,
                 command.answerText(),
                 command.answerType()
@@ -119,14 +114,14 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
 
         Answer savedAnswer = answerRepository.save(answer);
 
-        ImmediateFeedbackResult immediateFeedback = immediateFeedbackService.evaluate(
-                question.getId(),
-                savedAnswer.getContent()
+        ImmediateFeedback immediateFeedback = immediateFeedbackService.evaluate(
+                question.questionId(),
+                answer.getContent()
         );
 
         // TODO: MVP V2 AI 피드백 이벤트 발행
 
-        return AnswerSubmitResult.processing(savedAnswer.getId(), immediateFeedback);
+        return AnswerSubmitResult.processing(savedAnswer.getId(), ImmediateFeedbackResult.from(immediateFeedback));
     }
 
     @Override
@@ -157,7 +152,7 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
     public AnswerDetailResult getDetail(Long accountId, Long answerId, AnswerDetailQuery query)
             throws AnswerNotFoundException, AnswerAccessDeniedException {
 
-        // TODO: 구현 필요
+        // TODO: MVP V2 구현 필요
         // 1. Answer 조회
         // 2. 소유권 검증
         // 3. expand 파라미터에 따라 추가 데이터 조회
@@ -198,20 +193,9 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
         return null;
     }
 
-    private void validateSubmitCommand(AnswerSubmitCommand command) {
-        if (!command.hasText() && !command.hasAudio()) {
-            throw new AnswerInvalidContentException();
-        }
-    }
-
-    private Question findQuestionById(Long questionId) {
-        return questionRepository.findById(questionId)
-                .orElseThrow(() -> new QuestionNotFoundException(questionId));
-    }
-
-    private void validateQuestionEnabled(Question question) {
-        if (!question.isEnabled()) {
-            throw new QuestionDisabledException(question.getId());
+    private void validateQuestionEnabled(QuestionDetailResponse question) {
+        if (!question.useYn()) {
+            throw new QuestionDisabledException(question.questionId());
         }
     }
 
