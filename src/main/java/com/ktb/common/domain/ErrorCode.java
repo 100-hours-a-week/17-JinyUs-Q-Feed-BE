@@ -63,6 +63,20 @@ public enum ErrorCode {
     SEARCH_KEYWORD_TOO_SHORT(400, "S001", "검색어는 너무 짧습니다"),
     SEARCH_FAILED(500, "S002", "검색에 실패했습니다"),
 
+    // ==================== AI Feedback 관련 ====================
+    AI_FEEDBACK_SERVICE_ERROR(422, "AI001", "AI 피드백 서비스 오류가 발생했습니다"),
+    AI_FEEDBACK_REQUEST_FAILED(422, "AI002", "AI 피드백 요청에 실패했습니다"),
+    AI_FEEDBACK_TIMEOUT(422, "AI003", "AI 피드백 요청 시간이 초과되었습니다"),
+    AI_FEEDBACK_EMPTY_QUESTION(400, "AI004", "질문 텍스트가 비어있습니다"),
+    AI_FEEDBACK_EMPTY_ANSWER(400, "AI005", "답변 텍스트가 비어있습니다"),
+    AI_FEEDBACK_ANSWER_TOO_SHORT(400, "AI006", "답변 길이가 부족합니다"),
+    AI_FEEDBACK_ANSWER_TOO_LONG(400, "AI007", "답변 길이가 초과되었습니다"),
+    AI_FEEDBACK_ALREADY_IN_PROGRESS(409, "AI008", "이미 AI 피드백 생성이 진행 중입니다"),
+    AI_FEEDBACK_RATE_LIMIT_EXCEEDED(429, "AI009", "AI 피드백 요청 한도를 초과했습니다"),
+    AI_FEEDBACK_INTERNAL_SERVER_ERROR(422, "AI010", "AI 서버 내부 오류가 발생했습니다"),
+    AI_FEEDBACK_LLM_SERVICE_UNAVAILABLE(422, "AI011", "LLM 서비스 연결에 실패했습니다"),
+    AI_FEEDBACK_SERVICE_TEMPORARILY_UNAVAILABLE(422, "AI012", "AI 피드백 서비스를 일시적으로 사용할 수 없습니다"),
+
     // ==================== 공통 ====================
     INVALID_INPUT(400, "C001", "입력값이 올바르지 않습니다"),
     INTERNAL_SERVER_ERROR(500, "C002", "서버 내부 오류가 발생했습니다"),
