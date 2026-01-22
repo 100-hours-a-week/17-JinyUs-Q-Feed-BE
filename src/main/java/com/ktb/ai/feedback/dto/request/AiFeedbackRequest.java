@@ -1,0 +1,44 @@
+package com.ktb.ai.feedback.dto.request;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+@Schema(description = "AI 피드백 생성 요청")
+public record AiFeedbackRequest(
+
+        @JsonProperty("user_id")
+        @Schema(description = "사용자 ID", example = "101", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull(message = "사용자 ID는 필수입니다")
+        Long userId,
+
+        @JsonProperty("question_id")
+        @Schema(description = "질문 ID", example = "505", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotNull(message = "질문 ID는 필수입니다")
+        Long questionId,
+
+        @JsonProperty("type")
+        @Schema(description = "질문 타입", example = "PRACTICE_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED,
+                allowableValues = {"CS", "SYSTEM_DESIGN", "PORTFOLIO"})
+        @NotBlank(message = "질문 타입은 필수입니다")
+        String type,
+
+        @JsonProperty("category")
+        @Schema(description = "질문 카테고리", example = "DATABASE", requiredMode = Schema.RequiredMode.REQUIRED,
+                allowableValues = {"OS", "NETWORK", "DB", "COMPUTER_ARCHITECTURE", "ALGORITHM"})
+        @NotBlank(message = "질문 카테고리는 필수입니다")
+        String category,
+
+        @JsonProperty("question")
+        @Schema(description = "질문 내용", example = "RDBMS와 NoSQL의 차이점에 대해 설명해주세요.",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotBlank(message = "질문 내용은 필수입니다")
+        String question,
+
+        @JsonProperty("answer_text")
+        @Schema(description = "답변 내용", requiredMode = Schema.RequiredMode.REQUIRED)
+        @NotBlank(message = "답변 내용은 필수입니다")
+        String answerText
+) {
+}
