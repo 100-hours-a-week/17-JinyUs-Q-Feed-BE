@@ -77,6 +77,15 @@ public enum ErrorCode {
     AI_FEEDBACK_LLM_SERVICE_UNAVAILABLE(422, "AI011", "LLM 서비스 연결에 실패했습니다"),
     AI_FEEDBACK_SERVICE_TEMPORARILY_UNAVAILABLE(422, "AI012", "AI 피드백 서비스를 일시적으로 사용할 수 없습니다"),
 
+    // ==================== STT 관련 ====================
+    STT_SERVICE_ERROR(422, "STT001", "STT 서비스 오류가 발생했습니다"),
+    AUDIO_TOO_LONG(400, "STT002", "오디오 길이가 최대 허용 길이를 초과했습니다"),
+    AUDIO_TOO_LARGE(400, "STT003", "오디오 파일 크기가 최대 허용 크기를 초과했습니다"),
+    AUDIO_NOT_FOUND(404, "STT004", "오디오 파일을 찾을 수 없습니다"),
+    AUDIO_UNPROCESSABLE(422, "STT005", "오디오 파일을 처리할 수 없습니다"),
+    STT_TIMEOUT(408, "STT006", "STT 변환 시간이 초과되었습니다"),
+    STT_REQUEST_FAILED(422, "STT007", "STT 요청에 실패했습니다"),
+
     // ==================== 공통 ====================
     INVALID_INPUT(400, "C001", "입력값이 올바르지 않습니다"),
     INTERNAL_SERVER_ERROR(500, "C002", "서버 내부 오류가 발생했습니다"),
