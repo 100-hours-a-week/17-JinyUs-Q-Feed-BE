@@ -1,11 +1,15 @@
 package com.ktb.file.exception;
 
-public class FileStorageMigrationException extends RuntimeException {
+import com.ktb.common.domain.ErrorCode;
+import com.ktb.common.exception.BusinessException;
+
+public class FileStorageMigrationException extends BusinessException {
+
     public FileStorageMigrationException(String message) {
-        super(message);
+        super(ErrorCode.FILE_STORAGE_MIGRATION_FAILED, message);
     }
 
     public FileStorageMigrationException(String message, Throwable cause) {
-        super(message, cause);
+        super(ErrorCode.FILE_STORAGE_MIGRATION_FAILED, message, cause);
     }
 }

@@ -1,6 +1,12 @@
 package com.ktb.file.domain;
 
 import com.ktb.common.domain.BaseTimeEntity;
+import com.ktb.file.exception.FileAlreadyDeletedException;
+import com.ktb.file.exception.FileExtensionNotAllowedException;
+import com.ktb.file.exception.FileInvalidMetadataException;
+import com.ktb.file.exception.FileNotDeletedException;
+import com.ktb.file.exception.FileSizeExceededException;
+import com.ktb.file.util.SizeUtil;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,30 +41,41 @@ import lombok.ToString;
 @ToString
 public class File extends BaseTimeEntity {
 
+    private static final int ORIGINAL_NAME_MAX_LENGTH = 500;
+    private static final int STORED_NAME_MAX_LENGTH = 500;
+    private static final int PATH_MAX_LENGTH = 1000;
+    private static final int EXTENSION_MAX_LENGTH = 20;
+    private static final int MIME_TYPE_MAX_LENGTH = 100;
+    private static final int URL_MAX_LENGTH = 2000;
+    private static final int HASH_LENGTH = 64;
+    private static final long MIN_FILE_SIZE = 0L;
+    private static final long TEMP_CLEANUP_DAYS = 1L;
+    private static final long PERMANENT_DELETE_DAYS = 7L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "file_id")
     private Long id;
 
-    @Column(name = "file_original_name", nullable = false, length = 500)
+    @Column(name = "file_original_name", nullable = false, length = ORIGINAL_NAME_MAX_LENGTH)
     private String originalName;
 
-    @Column(name = "file_stored_name", nullable = false, length = 500)
+    @Column(name = "file_stored_name", nullable = false, length = STORED_NAME_MAX_LENGTH)
     private String storedName;
 
-    @Column(name = "file_path", nullable = false, length = 1000)
+    @Column(name = "file_path", nullable = false, length = PATH_MAX_LENGTH)
     private String path;
 
-    @Column(name = "file_ext", nullable = false, length = 20)
+    @Column(name = "file_ext", nullable = false, length = EXTENSION_MAX_LENGTH)
     private String extension;
 
     @Column(name = "file_size", nullable = false)
     private Long size;
 
-    @Column(name = "file_hash", length = 64)
+    @Column(name = "file_hash", length = HASH_LENGTH)
     private String hash;
 
-    @Column(name = "file_mime_type", nullable = false, length = 100)
+    @Column(name = "file_mime_type", nullable = false, length = MIME_TYPE_MAX_LENGTH)
     private String mimeType;
 
     @Enumerated(EnumType.STRING)
@@ -69,7 +86,7 @@ public class File extends BaseTimeEntity {
     @Column(name = "file_category", nullable = false, length = 20)
     private FileCategory category;
 
-    @Column(name = "file_url", length = 2000)
+    @Column(name = "file_url", length = URL_MAX_LENGTH)
     private String url;
 
     @Column(name = "file_created_at", nullable = false, updatable = false)
@@ -96,7 +113,7 @@ public class File extends BaseTimeEntity {
         this.originalName = originalName;
         this.storedName = storedName;
         this.path = path;
-        this.extension = extension.toLowerCase(); // 확장자는 소문자로 통일
+        this.extension = extension.toLowerCase();
         this.size = size;
         this.hash = hash;
         this.mimeType = mimeType;
@@ -161,48 +178,60 @@ public class File extends BaseTimeEntity {
             String mimeType
     ) {
         if (originalName == null || originalName.trim().isEmpty()) {
-            throw new IllegalArgumentException("원본 파일명은 필수입니다.");
+            throw new FileInvalidMetadataException("원본 파일명은 필수입니다.");
         }
-        if (originalName.length() > 500) {
-            throw new IllegalArgumentException("원본 파일명은 500자를 초과할 수 없습니다.");
+        if (originalName.length() > ORIGINAL_NAME_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "원본 파일명은 " + ORIGINAL_NAME_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
 
         if (storedName == null || storedName.trim().isEmpty()) {
-            throw new IllegalArgumentException("저장 파일명은 필수입니다.");
+            throw new FileInvalidMetadataException("저장 파일명은 필수입니다.");
         }
-        if (storedName.length() > 500) {
-            throw new IllegalArgumentException("저장 파일명은 500자를 초과할 수 없습니다.");
+        if (storedName.length() > STORED_NAME_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "저장 파일명은 " + STORED_NAME_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
 
         if (path == null || path.trim().isEmpty()) {
-            throw new IllegalArgumentException("파일 경로는 필수입니다.");
+            throw new FileInvalidMetadataException("파일 경로는 필수입니다.");
         }
-        if (path.length() > 1000) {
-            throw new IllegalArgumentException("파일 경로는 1000자를 초과할 수 없습니다.");
+        if (path.length() > PATH_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "파일 경로는 " + PATH_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
 
         if (extension == null || extension.trim().isEmpty()) {
-            throw new IllegalArgumentException("파일 확장자는 필수입니다.");
+            throw new FileInvalidMetadataException("파일 확장자는 필수입니다.");
         }
-        if (extension.length() > 20) {
-            throw new IllegalArgumentException("파일 확장자는 20자를 초과할 수 없습니다.");
+        if (extension.length() > EXTENSION_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "파일 확장자는 " + EXTENSION_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
 
-        if (size == null || size < 0) {
-            throw new IllegalArgumentException("파일 크기는 0 이상이어야 합니다.");
+        if (size == null || size < MIN_FILE_SIZE) {
+            throw new FileInvalidMetadataException("파일 크기는 0 이상이어야 합니다.");
         }
 
         if (mimeType == null || mimeType.trim().isEmpty()) {
-            throw new IllegalArgumentException("MIME 타입은 필수입니다.");
+            throw new FileInvalidMetadataException("MIME 타입은 필수입니다.");
         }
-        if (mimeType.length() > 100) {
-            throw new IllegalArgumentException("MIME 타입은 100자를 초과할 수 없습니다.");
+        if (mimeType.length() > MIME_TYPE_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "MIME 타입은 " + MIME_TYPE_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
     }
 
     public void updateUrl(String newUrl) {
-        if (newUrl != null && newUrl.length() > 2000) {
-            throw new IllegalArgumentException("URL은 2000자를 초과할 수 없습니다.");
+        if (newUrl != null && newUrl.length() > URL_MAX_LENGTH) {
+            throw new FileInvalidMetadataException(
+                    "URL은 " + URL_MAX_LENGTH + "자를 초과할 수 없습니다."
+            );
         }
         this.url = newUrl;
     }
@@ -214,22 +243,22 @@ public class File extends BaseTimeEntity {
     }
 
     public void updateHash(String hash) {
-        if (hash != null && hash.length() != 64) {
-            throw new IllegalArgumentException("SHA-256 해시는 64자여야 합니다.");
+        if (hash != null && hash.length() != HASH_LENGTH) {
+            throw new FileInvalidMetadataException("SHA-256 해시는 " + HASH_LENGTH + "자여야 합니다.");
         }
         this.hash = hash;
     }
 
     public void delete() {
         if (isDeleted()) {
-            throw new IllegalStateException("이미 삭제된 파일입니다.");
+            throw new FileAlreadyDeletedException(id);
         }
         this.fileDeletedAt = LocalDateTime.now();
     }
 
     public void restore() {
         if (!isDeleted()) {
-            throw new IllegalStateException("삭제되지 않은 파일입니다.");
+            throw new FileNotDeletedException(id);
         }
         this.fileDeletedAt = null;
     }
@@ -252,35 +281,19 @@ public class File extends BaseTimeEntity {
     }
 
     public String getReadableSize() {
-        if (size < 1024) {
-            return size + " B";
-        } else if (size < 1024 * 1024) {
-            return String.format("%.2f KB", size / 1024.0);
-        } else if (size < 1024 * 1024 * 1024) {
-            return String.format("%.2f MB", size / (1024.0 * 1024.0));
-        } else {
-            return String.format("%.2f GB", size / (1024.0 * 1024.0 * 1024.0));
-        }
+        return SizeUtil.getReadableSize(size);
     }
 
     public void validateSizeLimit() {
         long maxSize = category.getMaxSizeBytes();
         if (size > maxSize) {
-            throw new IllegalArgumentException(
-                    String.format("파일 크기가 제한을 초과했습니다. (최대: %s, 현재: %s)",
-                            formatBytes(maxSize),
-                            getReadableSize())
-            );
+            throw new FileSizeExceededException(category, getReadableSize());
         }
     }
 
     public void validateExtension() {
         if (!category.isAllowedExtension(extension)) {
-            throw new IllegalArgumentException(
-                    String.format("허용되지 않은 파일 확장자입니다. (%s는 %s 카테고리에서 사용할 수 없습니다)",
-                            extension,
-                            category.name())
-            );
+            throw new FileExtensionNotAllowedException(category, extension);
         }
     }
 
@@ -289,25 +302,15 @@ public class File extends BaseTimeEntity {
     }
 
     public boolean shouldBeCleanedAsTemp() {
-        return category == FileCategory.TEMP && getDaysSinceCreated() >= 1;
+        return category == FileCategory.TEMP && getDaysSinceCreated() >= TEMP_CLEANUP_DAYS;
     }
 
     public boolean shouldBePermanentlyDeleted() {
         if (!isDeleted()) {
             return false;
         }
-        return java.time.Duration.between(fileDeletedAt, LocalDateTime.now()).toDays() >= 7;
+        return java.time.Duration.between(fileDeletedAt, LocalDateTime.now())
+                .toDays() >= PERMANENT_DELETE_DAYS;
     }
 
-    private String formatBytes(long bytes) {
-        if (bytes < 1024) {
-            return bytes + " B";
-        } else if (bytes < 1024 * 1024) {
-            return String.format("%.2f KB", bytes / 1024.0);
-        } else if (bytes < 1024 * 1024 * 1024) {
-            return String.format("%.2f MB", bytes / (1024.0 * 1024.0));
-        } else {
-            return String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0));
-        }
-    }
 }
