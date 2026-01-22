@@ -5,6 +5,7 @@ import com.ktb.question.domain.QuestionType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 public record QuestionCreateRequest(
         @NotBlank
@@ -13,6 +14,8 @@ public record QuestionCreateRequest(
         @NotNull
         QuestionType type,
         @NotNull
-        QuestionCategory category
+        QuestionCategory category,
+        @Size(max = 5)
+        List<@NotBlank @Size(max = 100) String> keywords
 ) {
 }

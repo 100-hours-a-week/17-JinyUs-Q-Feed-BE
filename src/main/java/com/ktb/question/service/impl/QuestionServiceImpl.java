@@ -1,16 +1,33 @@
 package com.ktb.question.service.impl;
 
+import com.ktb.hashtag.domain.Hashtag;
+import com.ktb.hashtag.domain.QuestionHashtag;
+import com.ktb.hashtag.repository.HashtagRepository;
+import com.ktb.hashtag.repository.QuestionKeywordRow;
 import com.ktb.hashtag.repository.QuestionHashtagRepository;
 import com.ktb.question.domain.Question;
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
-import com.ktb.question.dto.*;
+import com.ktb.question.dto.KeywordMatchResponse;
+import com.ktb.question.dto.PaginationResponse;
+import com.ktb.question.dto.QuestionCreateRequest;
+import com.ktb.question.dto.QuestionDetailResponse;
+import com.ktb.question.dto.QuestionKeywordCheckResponse;
+import com.ktb.question.dto.QuestionKeywordListResponse;
+import com.ktb.question.dto.QuestionListResponse;
+import com.ktb.question.dto.QuestionSearchResponse;
+import com.ktb.question.dto.QuestionSummaryResponse;
+import com.ktb.question.dto.QuestionUpdateRequest;
 import com.ktb.question.exception.QuestionNotFoundException;
 import com.ktb.question.exception.SearchKeywordTooShortException;
 import com.ktb.question.repository.QuestionRepository;
 import com.ktb.question.service.QuestionService;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -28,14 +45,16 @@ public class QuestionServiceImpl implements QuestionService {
 
     private final QuestionRepository questionRepository;
     private final QuestionHashtagRepository questionHashtagRepository;
+    private final HashtagRepository hashtagRepository;
 
     @Override
     public QuestionListResponse getQuestions(QuestionCategory category, QuestionType type, Long cursor, int size) {
         PageRequest pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
         Slice<Question> questions = questionRepository.findActiveByFilters(type, category, cursor, pageable);
+        Map<Long, List<String>> keywordMap = loadKeywordsByQuestionIds(questions.getContent());
 
         return new QuestionListResponse(
-                toSummaryResponses(questions.getContent()),
+                toSummaryResponses(questions.getContent(), keywordMap),
                 toPaginationResponse(questions)
         );
     }
@@ -54,9 +73,10 @@ public class QuestionServiceImpl implements QuestionService {
 
         PageRequest pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
         Slice<Question> questions = questionRepository.searchActiveByKeyword(keyword, type, category, cursor, pageable);
+        Map<Long, List<String>> keywordMap = loadKeywordsByQuestionIds(questions.getContent());
 
         return new QuestionSearchResponse(
-                toSummaryResponses(questions.getContent()),
+                toSummaryResponses(questions.getContent(), keywordMap),
                 toPaginationResponse(questions)
         );
     }
@@ -66,6 +86,7 @@ public class QuestionServiceImpl implements QuestionService {
     public QuestionDetailResponse createQuestion(QuestionCreateRequest request) {
         Question question = Question.create(request.content(), request.type(), request.category());
         Question saved = questionRepository.save(question);
+        attachKeywords(saved, request.keywords());
 
         return toDetailResponse(saved);
     }
@@ -91,6 +112,9 @@ public class QuestionServiceImpl implements QuestionService {
             } else {
                 question.delete();
             }
+        }
+        if (request.keywords() != null) {
+            replaceKeywords(question, request.keywords());
         }
 
         return toDetailResponse(question);
@@ -133,23 +157,29 @@ public class QuestionServiceImpl implements QuestionService {
         }
     }
 
-    private List<QuestionSummaryResponse> toSummaryResponses(List<Question> questions) {
+    private List<QuestionSummaryResponse> toSummaryResponses(
+            List<Question> questions,
+            Map<Long, List<String>> keywordMap
+    ) {
         return questions.stream()
                 .map(question -> new QuestionSummaryResponse(
                         question.getId(),
                         question.getContent(),
                         question.getType(),
-                        question.getCategory()
+                        question.getCategory(),
+                        keywordMap.getOrDefault(question.getId(), List.of())
                 ))
                 .toList();
     }
 
     private QuestionDetailResponse toDetailResponse(Question question) {
+        List<String> keywords = questionHashtagRepository.findKeywordNamesByQuestionId(question.getId());
         return new QuestionDetailResponse(
                 question.getId(),
                 question.getContent(),
                 question.getType(),
                 question.getCategory(),
+                keywords,
                 question.isUseYn(),
                 question.getCreatedAt(),
                 question.getUpdatedAt(),
@@ -170,5 +200,69 @@ public class QuestionServiceImpl implements QuestionService {
         if (!questionRepository.existsById(questionId)) {
             throw new QuestionNotFoundException(questionId);
         }
+    }
+
+    private void attachKeywords(Question question, List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return;
+        }
+
+        List<String> normalized = keywords.stream()
+                .map(keyword -> keyword.trim().toLowerCase())
+                .distinct()
+                .toList();
+
+        List<Hashtag> existing = hashtagRepository.findByNameIn(normalized);
+        Map<String, Hashtag> existingByName = existing.stream()
+                .collect(Collectors.toMap(Hashtag::getName, Function.identity()));
+
+        List<Hashtag> toCreate = new ArrayList<>();
+        for (String name : normalized) {
+            if (!existingByName.containsKey(name)) {
+                toCreate.add(Hashtag.create(name));
+            }
+        }
+
+        if (!toCreate.isEmpty()) {
+            List<Hashtag> created = hashtagRepository.saveAll(toCreate);
+            for (Hashtag hashtag : created) {
+                existingByName.put(hashtag.getName(), hashtag);
+            }
+        }
+
+        List<QuestionHashtag> mappings = new ArrayList<>();
+        for (String name : normalized) {
+            Hashtag hashtag = existingByName.get(name);
+            if (hashtag != null) {
+                mappings.add(QuestionHashtag.create(question, hashtag));
+            }
+        }
+
+        if (!mappings.isEmpty()) {
+            questionHashtagRepository.saveAll(mappings);
+        }
+    }
+
+    private void replaceKeywords(Question question, List<String> keywords) {
+        questionHashtagRepository.deleteByQuestion_Id(question.getId());
+        if (keywords == null || keywords.isEmpty()) {
+            return;
+        }
+        attachKeywords(question, keywords);
+    }
+
+    private Map<Long, List<String>> loadKeywordsByQuestionIds(List<Question> questions) {
+        if (questions.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = questions.stream()
+                .map(Question::getId)
+                .toList();
+        List<QuestionKeywordRow> rows = questionHashtagRepository.findKeywordRowsByQuestionIdIn(ids);
+        return rows.stream()
+                .collect(Collectors.groupingBy(
+                        QuestionKeywordRow::getQuestionId,
+                        Collectors.mapping(QuestionKeywordRow::getKeyword, Collectors.toList())
+                ));
     }
 }
