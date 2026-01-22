@@ -1,0 +1,96 @@
+package com.ktb.answer.dto.response;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
+
+/**
+ * 답변 상세 조회 응답 DTO
+ */
+@Schema(description = "답변 상세 조회 응답")
+public record AnswerDetailResponse(
+
+        @Schema(description = "답변 ID", example = "1")
+        Long answerId,
+
+        @Schema(description = "답변 내용", example = "프로세스는 실행 중인 프로그램의 인스턴스이며...")
+        String content,
+
+        @Schema(description = "답변 타입", example = "PRACTICE_INTERVIEW")
+        String type,
+
+        @Schema(description = "답변 상태", example = "COMPLETED",
+                allowableValues = {"SUBMITTED", "TRANSCRIBING", "IMMEDIATE_FEEDBACK_READY",
+                                   "AI_FEEDBACK_PROCESSING", "COMPLETED", "FAILED_RETRYABLE", "FAILED"})
+        String status,
+
+        @Schema(description = "답변 작성 시각", example = "2026-01-22T10:30:00")
+        String createdAt,
+
+        @Schema(description = "질문 상세 정보 (expand=question 시 포함)")
+        QuestionDetail question,
+
+        @Schema(description = "즉각 피드백 정보 (expand=immediate_feedback 시 포함)")
+        ImmediateFeedbackDetail immediateFeedback,
+
+        @Schema(description = "AI 피드백 정보 (expand=feedback 시 포함)")
+        AiFeedbackDetail aiFeedback
+) {
+
+    @Schema(description = "질문 상세 정보")
+    public record QuestionDetail(
+            @Schema(description = "질문 ID", example = "10")
+            Long questionId,
+
+            @Schema(description = "질문 내용", example = "프로세스와 스레드의 차이를 설명해주세요")
+            String content,
+
+            @Schema(description = "질문 카테고리", example = "OS")
+            String category,
+
+            @Schema(description = "질문 타입", example = "TECHNICAL")
+            String type
+    ) {
+    }
+
+    @Schema(description = "즉각 피드백 상세")
+    public record ImmediateFeedbackDetail(
+            @Schema(description = "키워드 체크 결과 목록")
+            List<KeywordCheck> keywords
+    ) {
+    }
+
+    @Schema(description = "키워드 체크 결과")
+    public record KeywordCheck(
+            @Schema(description = "키워드", example = "프로세스")
+            String keyword,
+
+            @Schema(description = "포함 여부", example = "true")
+            boolean included
+    ) {
+    }
+
+    @Schema(description = "AI 피드백 상세")
+    public record AiFeedbackDetail(
+            @Schema(description = "피드백 상태", example = "COMPLETED",
+                    allowableValues = {"PROCESSING", "COMPLETED", "FAILED"})
+            String status,
+
+            @Schema(description = "AI 종합 평가 피드백",
+                    example = "전반적으로 프로세스와 스레드의 개념을 잘 이해하고 있습니다...")
+            String feedback,
+
+            @Schema(description = "평가 지표 점수 목록 (레이더 차트)")
+            List<MetricScore> metrics
+    ) {
+    }
+
+    @Schema(description = "평가 지표 점수")
+    public record MetricScore(
+            @Schema(description = "평가 지표명", example = "논리 구조")
+            String metricName,
+
+            @Schema(description = "점수 (0-100)", example = "85", minimum = "0", maximum = "100")
+            int score
+    ) {
+    }
+}
