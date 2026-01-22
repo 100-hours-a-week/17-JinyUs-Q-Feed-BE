@@ -5,6 +5,9 @@ import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
 import com.ktb.question.dto.QuestionCreateRequest;
 import com.ktb.question.dto.QuestionDetailResponse;
+import com.ktb.question.dto.QuestionKeywordCheckRequest;
+import com.ktb.question.dto.QuestionKeywordCheckResponse;
+import com.ktb.question.dto.QuestionKeywordListResponse;
 import com.ktb.question.dto.QuestionListResponse;
 import com.ktb.question.dto.QuestionSearchResponse;
 import com.ktb.question.dto.QuestionUpdateRequest;
@@ -106,5 +109,28 @@ public class QuestionController {
     ) {
         questionService.deleteQuestion(questionId);
         return ResponseEntity.ok(new ApiResponse<>("question_deleted_success", null));
+    }
+
+    /**
+     * 질문 핵심 키워드 조회
+     */
+    @GetMapping("/{questionId}/keywords")
+    public ResponseEntity<ApiResponse<QuestionKeywordListResponse>> getQuestionKeywords(
+            @PathVariable Long questionId
+    ) {
+        QuestionKeywordListResponse result = questionService.getQuestionKeywords(questionId);
+        return ResponseEntity.ok(new ApiResponse<>("question_keywords_retrieval_success", result));
+    }
+
+    /**
+     * 질문 핵심 키워드 포함 여부 확인
+     */
+    @PostMapping("/{questionId}/keyword-checks")
+    public ResponseEntity<ApiResponse<QuestionKeywordCheckResponse>> checkQuestionKeyword(
+            @PathVariable Long questionId,
+            @Valid @RequestBody QuestionKeywordCheckRequest request
+    ) {
+        QuestionKeywordCheckResponse result = questionService.checkQuestionKeywords(questionId, request.keywords());
+        return ResponseEntity.ok(new ApiResponse<>("question_keywords_check_success", result));
     }
 }

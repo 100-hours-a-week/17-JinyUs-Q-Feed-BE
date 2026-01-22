@@ -6,6 +6,9 @@ import com.ktb.question.domain.QuestionType;
 import com.ktb.question.dto.PaginationResponse;
 import com.ktb.question.dto.QuestionCreateRequest;
 import com.ktb.question.dto.QuestionDetailResponse;
+import com.ktb.question.dto.KeywordMatchResponse;
+import com.ktb.question.dto.QuestionKeywordCheckResponse;
+import com.ktb.question.dto.QuestionKeywordListResponse;
 import com.ktb.question.dto.QuestionListResponse;
 import com.ktb.question.dto.QuestionSearchResponse;
 import com.ktb.question.dto.QuestionSummaryResponse;
@@ -14,6 +17,7 @@ import com.ktb.question.exception.QuestionNotFoundException;
 import com.ktb.question.exception.SearchKeywordTooShortException;
 import com.ktb.question.repository.QuestionRepository;
 import com.ktb.question.service.QuestionService;
+import com.ktb.hashtag.repository.QuestionHashtagRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +34,7 @@ public class QuestionServiceImpl implements QuestionService {
     private static final int MIN_SEARCH_KEYWORD_LENGTH = 2;
 
     private final QuestionRepository questionRepository;
+    private final QuestionHashtagRepository questionHashtagRepository;
 
     @Override
     public QuestionListResponse getQuestions(QuestionCategory category, QuestionType type, Long cursor, int size) {
@@ -109,6 +114,26 @@ public class QuestionServiceImpl implements QuestionService {
         }
     }
 
+    @Override
+    public QuestionKeywordListResponse getQuestionKeywords(Long questionId) {
+        validateQuestionExists(questionId);
+        List<String> keywords = questionHashtagRepository.findKeywordNamesByQuestionId(questionId);
+        return new QuestionKeywordListResponse(keywords);
+    }
+
+    @Override
+    public QuestionKeywordCheckResponse checkQuestionKeywords(Long questionId, List<String> keywords) {
+        validateQuestionExists(questionId);
+        List<KeywordMatchResponse> results = keywords.stream()
+                .map(keyword -> new KeywordMatchResponse(
+                        keyword,
+                        questionHashtagRepository
+                                .existsByQuestion_IdAndHashtag_NameIgnoreCase(questionId, keyword)
+                ))
+                .toList();
+        return new QuestionKeywordCheckResponse(results);
+    }
+
     private void validateKeyword(String keyword) {
         if (keyword == null || keyword.trim().length() < MIN_SEARCH_KEYWORD_LENGTH) {
             throw new SearchKeywordTooShortException(MIN_SEARCH_KEYWORD_LENGTH);
@@ -146,5 +171,11 @@ public class QuestionServiceImpl implements QuestionService {
             nextCursor = slice.hasNext() ? last.getId() : null;
         }
         return new PaginationResponse(nextCursor, slice.hasNext(), slice.getSize());
+    }
+
+    private void validateQuestionExists(Long questionId) {
+        if (!questionRepository.existsById(questionId)) {
+            throw new QuestionNotFoundException(questionId);
+        }
     }
 }
