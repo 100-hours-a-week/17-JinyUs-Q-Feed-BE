@@ -40,6 +40,15 @@ public enum ErrorCode {
     ANSWER_INVALID_STATUS_TRANSITION(400, "A005", "허용되지 않는 답변 상태 전이입니다"),
     ANSWER_TYPE_REQUIRED(400, "A006", "답변 유형은 필수입니다"),
 
+    // ==================== File 관련 ====================
+    INVALID_FILE_FORMAT(400, "F001", "지원하지 않는 파일 형식입니다"),
+    FILE_NOT_FOUND(404, "F002", "파일을 찾을 수 없습니다"),
+    FILE_ALREADY_DELETED(409, "F003", "이미 삭제된 파일입니다"),
+    FILE_SIZE_EXCEEDED(422, "F004", "파일 크기 제한을 초과했습니다"),
+    FILE_STORAGE_MIGRATION_FAILED(422, "F005", "파일 저장소 마이그레이션에 실패했습니다"),
+    FILE_INVALID_METADATA(400, "F006", "파일 메타데이터가 올바르지 않습니다"),
+    FILE_NOT_DELETED(409, "F007", "삭제되지 않은 파일입니다"),
+
     // ==================== Hashtag 관련 ====================
     HASHTAG_NAME_REQUIRED(400, "H001", "해시태그 이름은 필수입니다"),
     HASHTAG_NAME_TOO_LONG(400, "H002", "해시태그 이름은 100자를 초과할 수 없습니다"),

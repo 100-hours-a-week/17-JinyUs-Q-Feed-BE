@@ -1,11 +1,19 @@
 package com.ktb.file.exception;
 
-public class FileNotFoundException extends RuntimeException {
-    public FileNotFoundException(String message) {
-        super(message);
-    }
+import com.ktb.common.domain.ErrorCode;
+import com.ktb.common.exception.BusinessException;
+
+public class FileNotFoundException extends BusinessException {
 
     public FileNotFoundException(Long fileId) {
-        super("파일을 찾을 수 없습니다. ID: " + fileId);
+        super(ErrorCode.FILE_NOT_FOUND, buildMessage(fileId));
+    }
+
+    public FileNotFoundException(String identifier) {
+        super(ErrorCode.FILE_NOT_FOUND, buildMessage(identifier));
+    }
+
+    private static String buildMessage(Object identifier) {
+        return String.format("%s identifier=%s",ErrorCode.FILE_NOT_FOUND, identifier);
     }
 }
