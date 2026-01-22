@@ -7,6 +7,7 @@ import java.util.List;
 
 public record QuestionKeywordCheckRequest(
         @NotEmpty
+        @Size(max = 5)
         List<@NotBlank @Size(max = 100) String> keywords
 ) {
 }
