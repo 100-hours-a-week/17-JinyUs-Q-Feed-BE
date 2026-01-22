@@ -1,17 +1,22 @@
 package com.ktb.question.domain;
 
-import com.ktb.common.domain.BaseTimeEntity;
+import com.ktb.common.domain.BaseActivatableEntity;
 import com.ktb.question.exception.QuestionAlreadyDeletedException;
 import com.ktb.question.exception.QuestionInvalidContentException;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-import java.time.LocalDateTime;
-
-/**
- * 면접 질문 엔티티
- * - Soft Delete 방식 채택
- */
 @Entity
 @Table(
         name = "QUESTION",
@@ -20,7 +25,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString
-public class Question extends BaseTimeEntity {
+public class Question extends BaseActivatableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "question_id")
@@ -37,12 +42,6 @@ public class Question extends BaseTimeEntity {
     @Column(name = "question_ctg", nullable = false, length = 50)
     private QuestionCategory category;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "use_yn", nullable = false)
-    private boolean useYn = true;
-
     @Builder
     private Question(String content, QuestionType type, QuestionCategory category) {
         validateContent(content);
@@ -56,13 +55,11 @@ public class Question extends BaseTimeEntity {
             QuestionType type,
             QuestionCategory category
     ) {
-        Question question = Question.builder()
+        return Question.builder()
                 .content(content)
                 .type(type)
                 .category(category)
                 .build();
-
-        return question;
     }
 
     public void updateType(QuestionType type) {
@@ -79,16 +76,15 @@ public class Question extends BaseTimeEntity {
     }
 
     public void delete() {
-        if (!useYn || deletedAt != null) {
+        if (isEnabled()) {
             throw new QuestionAlreadyDeletedException(id);
         }
-        this.useYn = false;
-        this.deletedAt = LocalDateTime.now();
+        disable();
+        softDelete();
     }
 
     public void activate() {
-        this.useYn = true;
-        this.deletedAt = null;
+        enable();
     }
 
     private void validateContent(String content) {
