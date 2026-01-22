@@ -2,11 +2,7 @@ package com.ktb.question.service;
 
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
-import com.ktb.question.dto.QuestionCreateRequest;
-import com.ktb.question.dto.QuestionDetailResponse;
-import com.ktb.question.dto.QuestionListResponse;
-import com.ktb.question.dto.QuestionSearchResponse;
-import com.ktb.question.dto.QuestionUpdateRequest;
+import com.ktb.question.dto.*;
 
 public interface QuestionService {
 
@@ -21,4 +17,8 @@ public interface QuestionService {
     QuestionDetailResponse updateQuestion(Long questionId, QuestionUpdateRequest request);
 
     void deleteQuestion(Long questionId);
+
+    QuestionKeywordListResponse getQuestionKeywords(Long questionId);
+
+    QuestionKeywordCheckResponse checkQuestionKeywords(Long questionId, java.util.List<String> keywords);
 }
