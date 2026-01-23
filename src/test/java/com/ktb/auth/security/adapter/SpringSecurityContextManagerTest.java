@@ -64,6 +64,7 @@ class SpringSecurityContextManagerTest {
         // given
         UserAccount mockUser = mock(UserAccount.class);
         when(mockUser.getId()).thenReturn(1L);
+        when(mockUser.getEmail()).thenReturn("user@example.com");
 
         AuthenticatedUser user = new AuthenticatedUserAdapter(mockUser, List.of("ROLE_USER"));
         RequestContext request = header -> "Bearer token";

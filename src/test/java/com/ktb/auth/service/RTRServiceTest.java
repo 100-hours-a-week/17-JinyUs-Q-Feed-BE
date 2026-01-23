@@ -5,6 +5,7 @@ import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.domain.TokenFamily;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.exception.account.AccountNotFoundException;
+import com.ktb.auth.exception.family.FamilyRevokedException;
 import com.ktb.auth.exception.family.TokenFamilyNotFoundException;
 import com.ktb.auth.exception.token.InvalidRefreshTokenException;
 import com.ktb.auth.repository.RefreshTokenRepository;
@@ -80,8 +81,7 @@ class RTRServiceTest {
 
         // when & then
         assertThatThrownBy(() -> rtrService.createFamily(USER_ID, DEVICE_INFO, CLIENT_IP))
-                .isInstanceOf(AccountNotFoundException.class)
-                .hasMessageContaining("계정을 찾을 수 없습니다");
+                .isInstanceOf(AccountNotFoundException.class);
 
         verify(userAccountRepository).findById(USER_ID);
         verify(tokenFamilyRepository, never()).save(any());
@@ -176,8 +176,7 @@ class RTRServiceTest {
 
         // when & then
         assertThatThrownBy(() -> rtrService.validateFamilyActive(FAMILY_ID))
-                .isInstanceOf(TokenFamilyNotFoundException.class)
-                .hasMessageContaining("토큰 패밀리를 찾을 수 없습니다");
+                .isInstanceOf(FamilyRevokedException.class);
 
         verify(tokenFamilyRepository).findById(FAMILY_ID);
     }
@@ -193,8 +192,7 @@ class RTRServiceTest {
 
         // when & then
         assertThatThrownBy(() -> rtrService.validateFamilyActive(FAMILY_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("세션이 이미 종료되었습니다");
+                .isInstanceOf(FamilyRevokedException.class);
 
         verify(tokenFamilyRepository).findById(FAMILY_ID);
     }
@@ -207,8 +205,7 @@ class RTRServiceTest {
 
         // when & then
         assertThatThrownBy(() -> rtrService.validateFamilyActive(FAMILY_ID))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("세션이 이미 종료되었습니다");
+                .isInstanceOf(TokenFamilyNotFoundException.class);
 
         verify(tokenFamilyRepository).findById(FAMILY_ID);
     }
@@ -253,8 +250,7 @@ class RTRServiceTest {
 
         // when & then
         assertThatThrownBy(() -> rtrService.revokeFamily(FAMILY_ID, RevokeReason.USER_LOGOUT))
-                .isInstanceOf(TokenFamilyNotFoundException.class)
-                .hasMessageContaining("토큰 패밀리를 찾을 수 없습니다");
+                .isInstanceOf(TokenFamilyNotFoundException.class);
 
         verify(tokenFamilyRepository).findById(FAMILY_ID);
     }

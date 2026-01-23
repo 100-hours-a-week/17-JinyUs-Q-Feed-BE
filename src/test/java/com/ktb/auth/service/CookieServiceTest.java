@@ -31,12 +31,14 @@ class CookieServiceTest {
     @BeforeEach
     void setUp() {
         when(jwtProperties.getRefreshTokenCookieName()).thenReturn(COOKIE_NAME);
-        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(REFRESH_TOKEN_EXPIRATION);
     }
 
     @Test
     @DisplayName("Refresh Token 쿠키 생성 시 올바른 속성이 설정되어야 한다")
     void createRefreshTokenCookie_ShouldSetCorrectAttributes() {
+        // given
+        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(REFRESH_TOKEN_EXPIRATION);
+
         // when
         Cookie cookie = cookieService.createRefreshTokenCookie(SAMPLE_REFRESH_TOKEN);
 
@@ -52,6 +54,9 @@ class CookieServiceTest {
     @Test
     @DisplayName("Refresh Token 쿠키의 MaxAge는 초 단위로 변환되어야 한다")
     void createRefreshTokenCookie_ShouldConvertMaxAgeToSeconds() {
+        // given
+        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(REFRESH_TOKEN_EXPIRATION);
+
         // when
         Cookie cookie = cookieService.createRefreshTokenCookie(SAMPLE_REFRESH_TOKEN);
 
@@ -78,6 +83,9 @@ class CookieServiceTest {
     @Test
     @DisplayName("만료된 쿠키도 동일한 보안 속성을 가져야 한다")
     void createExpiredRefreshTokenCookie_ShouldHaveSameSecurityAttributes() {
+        // given
+        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(REFRESH_TOKEN_EXPIRATION);
+
         // when
         Cookie expiredCookie = cookieService.createExpiredRefreshTokenCookie();
         Cookie normalCookie = cookieService.createRefreshTokenCookie(SAMPLE_REFRESH_TOKEN);

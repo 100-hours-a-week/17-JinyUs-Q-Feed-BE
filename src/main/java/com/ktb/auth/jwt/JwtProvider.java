@@ -164,7 +164,7 @@ public class JwtProvider {
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new TokenHashingFailedException(e);
+            throw new TokenHashingFailedException();
         }
     }
 
