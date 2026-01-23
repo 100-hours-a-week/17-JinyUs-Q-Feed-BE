@@ -395,17 +395,14 @@ class QuestionTest {
         }
 
         @Test
-        @DisplayName("soft delete 처리된 질문은 activate 호출해도 활성화되지 않음")
-        void activate_WhenSoftDeleted_ShouldRemainDisabled() {
+        @DisplayName("soft delete 처리된 질문은 activate 호출 시 예외 발생")
+        void activate_WhenSoftDeleted_ShouldThrowException() {
             // Given
             Question question = QuestionFixture.createSoftDeletedQuestion();
 
-            // When
-            question.activate();
-
-            // Then
-            assertThat(question.isUseYn()).isFalse();
-            assertThat(question.getDeletedAt()).isNotNull();
+            // When & Then
+            assertThatThrownBy(() -> question.activate())
+                    .isInstanceOf(QuestionAlreadyDeletedException.class);
         }
 
         @Test

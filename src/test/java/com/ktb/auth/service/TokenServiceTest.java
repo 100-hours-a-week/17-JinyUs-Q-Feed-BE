@@ -2,14 +2,14 @@ package com.ktb.auth.service;
 
 import com.ktb.auth.domain.RefreshToken;
 import com.ktb.auth.domain.TokenFamily;
+import com.ktb.auth.exception.token.InvalidAccessTokenException;
+import com.ktb.auth.exception.token.InvalidRefreshTokenException;
 import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.service.impl.TokenServiceImpl;
-import com.ktb.common.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,8 +92,7 @@ class TokenServiceTest {
 
         // when & then
         assertThatThrownBy(() -> tokenService.validateAccessToken(EXPIRED_TOKEN))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Access Token이 유효하지 않습니다");
+                .isInstanceOf(InvalidAccessTokenException.class);
 
         verify(jwtProvider).validateAccessToken(EXPIRED_TOKEN);
     }
@@ -107,8 +106,7 @@ class TokenServiceTest {
 
         // when & then
         assertThatThrownBy(() -> tokenService.validateAccessToken(TAMPERED_TOKEN))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Access Token이 유효하지 않습니다");
+                .isInstanceOf(InvalidAccessTokenException.class);
 
         verify(jwtProvider).validateAccessToken(TAMPERED_TOKEN);
     }
@@ -140,8 +138,7 @@ class TokenServiceTest {
 
         // when & then
         assertThatThrownBy(() -> tokenService.validateRefreshToken(EXPIRED_TOKEN))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Refresh Token이 유효하지 않습니다");
+                .isInstanceOf(InvalidRefreshTokenException.class);
 
         verify(jwtProvider).validateRefreshToken(EXPIRED_TOKEN);
     }
@@ -183,18 +180,8 @@ class TokenServiceTest {
 
         // when & then
         assertThatThrownBy(() -> tokenService.findByTokenHash("nonexistent-hash"))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Refresh Token이 유효하지 않습니다");
+                .isInstanceOf(InvalidRefreshTokenException.class);
 
         verify(refreshTokenRepository).findByTokenHashWithFamily("nonexistent-hash");
-    }
-
-    @Test
-    @DisplayName("Refresh Token 발급 시도 시 UnsupportedOperationException이 발생해야 한다")
-    void issueRefreshToken_ShouldThrowUnsupportedOperationException() {
-        // when & then
-        assertThatThrownBy(() -> tokenService.issueRefreshToken(USER_ID, 1L))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("RTRService에서 처리합니다");
     }
 }

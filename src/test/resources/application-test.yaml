@@ -1,0 +1,57 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+
+  security:
+    oauth2:
+      client:
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+        registration:
+          kakao:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            scope: profile_nickname,profile_image,account_email
+
+jwt:
+  secret: test-secret-key-for-testing-purposes-only-minimum-256-bits-required
+  access-token-expiration: 600000
+  refresh-token-expiration: 1209600000
+  refresh-token-cookie-name: refreshToken
+
+ai:
+  feedback:
+    base-url: http://localhost:8000
+    endpoint: /api/v1/feedback/evaluate
+    timeout: 30000
+  stt:
+    base-url: http://localhost:8001
+    endpoint: /ai/stt
+    timeout: 60000
+
+aws:
+  s3:
+    bucket-name: test-bucket
+    region: ap-northeast-2
+    access-key: test-access-key
+    secret-key: test-secret-key

@@ -5,8 +5,12 @@ import com.ktb.common.exception.BusinessException;
 
 public class InvalidRefreshTokenException extends BusinessException {
 
+    public InvalidRefreshTokenException() {
+        super(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
     public InvalidRefreshTokenException(String reason) {
         super(ErrorCode.INVALID_REFRESH_TOKEN,
-                String.format("Refresh Token이 유효하지 않습니다: %s", reason));
+                String.format("%s: %s", ErrorCode.INVALID_REFRESH_TOKEN.getMessage(), reason));
     }
 }
