@@ -31,6 +31,12 @@ public enum ErrorCode {
     QUESTION_DISABLED(400, "Q002", "비활성화된 질문입니다"),
     QUESTION_ALREADY_DELETED(400, "Q003", "이미 삭제된 질문입니다"),
     QUESTION_INVALID_CONTENT(400, "Q004", "질문 내용이 올바르지 않습니다"),
+    QUESTION_TYPE_REQUIRED(400, "Q005", "질문 유형은 필수입니다"),
+    QUESTION_CATEGORY_REQUIRED(400, "Q006", "질문 카테고리는 필수입니다"),
+    QUESTION_CONTENT_REQUIRED(400, "Q007", "질문 내용은 필수입니다"),
+    QUESTION_CONTENT_HAS_SPACES(400, "Q008", "질문 내용은 앞뒤 공백을 포함할 수 없습니다"),
+    QUESTION_CONTENT_TOO_SHORT(400, "Q009", "질문 내용은 2자 이상이어야 합니다"),
+    QUESTION_CONTENT_TOO_LONG(400, "Q010", "질문 내용은 200자를 초과할 수 없습니다"),
 
     // ==================== Answer 관련 ====================
     ANSWER_NOT_FOUND(404, "A001", "답변을 찾을 수 없습니다"),
