@@ -11,6 +11,7 @@ import com.ktb.answer.dto.response.AnswerListResponse;
 import com.ktb.answer.dto.response.AnswerSubmitResponse;
 import com.ktb.answer.dto.response.FeedbackResponse;
 import com.ktb.answer.dto.response.SessionAnswerSubmitResponse;
+import com.ktb.answer.service.AiFeedbackOrchestrator;
 import com.ktb.answer.service.AnswerApplicationService;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.common.dto.ApiResponse;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AnswerController {
 
     private final AnswerApplicationService answerApplicationService;
+    private final AiFeedbackOrchestrator aiFeedbackOrchestrator;
 
     private static final String MESSAGE_ANSWER_LIST_RETRIEVED = "learning_records_retrieval_success";
     private static final String MESSAGE_ANSWER_DETAIL_RETRIEVED = "record_retrieval_success";
@@ -163,24 +165,17 @@ public class AnswerController {
     })
     @GetMapping("/interviews/answers/{answerId}/feedback")
     public ResponseEntity<ApiResponse<FeedbackResponse>> getFeedback(
-            @Parameter(hidden = true) Long accountId,  // TODO: Spring Security에서 주입
+            @AuthenticationPrincipal SecurityUserAccount principal,
             @Parameter(description = "답변 ID", example = "1")
             @PathVariable Long answerId
     ) {
-        // TODO: 구현 필요
-        // 1. accountId 추출
-        // 2. Service 호출 (소유권 검증 포함)
-        // 3. Answer 상태에 따라 응답 분기
-        //    - PROCESSING: 202 Accepted (retry_after 포함)
-        //    - COMPLETED: 200 OK (레이더 차트, 피드백 포함)
-        //    - FAILED: 200 OK (실패 사유 포함)
-        // 4. Result를 Response DTO로 변환
-        // 5. ApiResponse로 래핑하여 반환
+        Long accountId = principal.getAccount().getId();
+        FeedbackResponse feedbackResponse = aiFeedbackOrchestrator.getFeedbackSync(answerId, accountId);
 
         log.info("GET /api/v1/interviews/answers/{}/feedback - accountId: {}", answerId, accountId);
 
         return ResponseEntity.ok(
-                new ApiResponse<>(MESSAGE_FEEDBACK_RETRIEVED, null)
+                new ApiResponse<>(MESSAGE_FEEDBACK_RETRIEVED, feedbackResponse)
         );
     }
 }
