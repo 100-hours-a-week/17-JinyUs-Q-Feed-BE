@@ -11,11 +11,6 @@ public interface TokenService {
     String issueAccessToken(Long accountId, List<String> roles);
 
     /**
-     * Refresh Token 발급 및 저장
-     */
-    String issueRefreshToken(Long accountId, Long familyId);
-
-    /**
      * Access Token 검증
      */
     TokenClaims validateAccessToken(String accessToken);

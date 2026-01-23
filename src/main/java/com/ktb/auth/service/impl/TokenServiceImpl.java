@@ -1,11 +1,11 @@
 package com.ktb.auth.service.impl;
 
+import com.ktb.auth.exception.token.InvalidAccessTokenException;
+import com.ktb.auth.exception.token.InvalidRefreshTokenException;
 import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.service.TokenService;
-import com.ktb.common.domain.ErrorCode;
-import com.ktb.common.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +27,6 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    @Transactional
-    public String issueRefreshToken(Long accountId, Long familyId) {
-        // TODO
-        // familyId를 사용하여 실제 Family 조회가 필요하지만 우선 간단하게 처리
-        // 실제로는 TokenFamilyRepository에서 조회해야 함
-        throw new UnsupportedOperationException("issueRefreshToken은 RTRService에서 처리합니다");
-    }
-
-    @Override
     public TokenService.TokenClaims validateAccessToken(String accessToken) {
         try {
             Claims claims = jwtProvider.validateAccessToken(accessToken);
@@ -45,7 +36,7 @@ public class TokenServiceImpl implements TokenService {
 
             return new TokenService.TokenClaims(userId, roles);
         } catch (Exception e) {
-            throw new InvalidAccessTokenException(e.getMessage());
+            throw new InvalidAccessTokenException();
         }
     }
 
@@ -71,19 +62,6 @@ public class TokenServiceImpl implements TokenService {
                         token.getUsed(),
                         token.getExpiresAt()
                 ))
-                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh Token을 찾을 수 없습니다."));
-    }
-
-    // 예외 클래스들
-    private static class InvalidAccessTokenException extends BusinessException {
-        public InvalidAccessTokenException(String message) {
-            super(ErrorCode.INVALID_ACCESS_TOKEN, message);
-        }
-    }
-
-    private static class InvalidRefreshTokenException extends BusinessException {
-        public InvalidRefreshTokenException(String message) {
-            super(ErrorCode.INVALID_REFRESH_TOKEN, message);
-        }
+                .orElseThrow(InvalidRefreshTokenException::new);
     }
 }

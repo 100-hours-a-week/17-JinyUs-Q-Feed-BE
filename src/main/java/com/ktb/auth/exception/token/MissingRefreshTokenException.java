@@ -6,6 +6,6 @@ import com.ktb.common.exception.BusinessException;
 public class MissingRefreshTokenException extends BusinessException {
 
     public MissingRefreshTokenException() {
-        super(ErrorCode.MISSING_REFRESH_TOKEN, "Refresh Token이 누락되었습니다");
+        super(ErrorCode.MISSING_REFRESH_TOKEN);
     }
 }
