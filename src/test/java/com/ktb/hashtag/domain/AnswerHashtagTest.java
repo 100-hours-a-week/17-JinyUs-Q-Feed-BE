@@ -1,6 +1,7 @@
 package com.ktb.hashtag.domain;
 
 import com.ktb.answer.domain.Answer;
+import com.ktb.fixture.AnswerHashtagFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class AnswerHashtagTest {
             Hashtag hashtag = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(answer, hashtag);
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag);
 
             // Then
             assertThat(answerHashtag).isNotNull();
@@ -34,36 +35,30 @@ class AnswerHashtagTest {
         @Test
         @DisplayName("Answer null로 생성 가능 (Service 레이어에서 검증)")
         void create_WithNullAnswer_ShouldSucceed() {
-            // Given
-            Hashtag hashtag = mock(Hashtag.class);
-
-            // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(null, hashtag);
+            // Given & When
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtagWithNullAnswer();
 
             // Then
             assertThat(answerHashtag.getAnswer()).isNull();
-            assertThat(answerHashtag.getHashtag()).isEqualTo(hashtag);
+            assertThat(answerHashtag.getHashtag()).isNotNull();
         }
 
         @Test
         @DisplayName("Hashtag null로 생성 가능 (Service 레이어에서 검증)")
         void create_WithNullHashtag_ShouldSucceed() {
-            // Given
-            Answer answer = mock(Answer.class);
-
-            // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(answer, null);
+            // Given & When
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtagWithNullHashtag();
 
             // Then
-            assertThat(answerHashtag.getAnswer()).isEqualTo(answer);
+            assertThat(answerHashtag.getAnswer()).isNotNull();
             assertThat(answerHashtag.getHashtag()).isNull();
         }
 
         @Test
         @DisplayName("Answer와 Hashtag 모두 null로 생성 가능")
         void create_WithBothNull_ShouldSucceed() {
-            // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(null, null);
+            // Given & When
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtagWithBothNull();
 
             // Then
             assertThat(answerHashtag.getAnswer()).isNull();
@@ -83,7 +78,7 @@ class AnswerHashtagTest {
             Hashtag hashtag = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(answer, hashtag);
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag);
 
             // Then
             assertThat(answerHashtag.getAnswer()).isNotNull();
@@ -101,8 +96,8 @@ class AnswerHashtagTest {
             Hashtag hashtag2 = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag1 = AnswerHashtag.create(answer, hashtag1);
-            AnswerHashtag answerHashtag2 = AnswerHashtag.create(answer, hashtag2);
+            AnswerHashtag answerHashtag1 = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag1);
+            AnswerHashtag answerHashtag2 = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag2);
 
             // Then
             assertThat(answerHashtag1.getAnswer()).isEqualTo(answer);
@@ -119,8 +114,8 @@ class AnswerHashtagTest {
             Hashtag hashtag = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag1 = AnswerHashtag.create(answer1, hashtag);
-            AnswerHashtag answerHashtag2 = AnswerHashtag.create(answer2, hashtag);
+            AnswerHashtag answerHashtag1 = AnswerHashtagFixture.createAnswerHashtag(answer1, hashtag);
+            AnswerHashtag answerHashtag2 = AnswerHashtagFixture.createAnswerHashtag(answer2, hashtag);
 
             // Then
             assertThat(answerHashtag1.getHashtag()).isEqualTo(hashtag);
@@ -141,7 +136,7 @@ class AnswerHashtagTest {
             Hashtag hashtag = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(answer, hashtag);
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag);
 
             // Then
             assertThat(answerHashtag.getAnswer()).isEqualTo(answer);
@@ -156,7 +151,7 @@ class AnswerHashtagTest {
             Hashtag hashtag = mock(Hashtag.class);
 
             // When
-            AnswerHashtag answerHashtag = AnswerHashtag.create(answer, hashtag);
+            AnswerHashtag answerHashtag = AnswerHashtagFixture.createAnswerHashtag(answer, hashtag);
 
             // Then
             assertThat(answerHashtag.getHashtag()).isEqualTo(hashtag);

@@ -11,31 +11,32 @@ public class AnswerHashtagFixture {
     public static AnswerHashtag createAnswerHashtag() {
         return AnswerHashtag.create(
                 mock(Answer.class),
-                mock(Hashtag.class)
+                mock(Hashtag.class),
+            false
         );
     }
 
     public static AnswerHashtag createAnswerHashtag(Answer answer, Hashtag hashtag) {
-        return AnswerHashtag.create(answer, hashtag);
+        return AnswerHashtag.create(answer, hashtag, false);
     }
 
     public static AnswerHashtag createAnswerHashtagWithAnswer(Answer answer) {
-        return AnswerHashtag.create(answer, mock(Hashtag.class));
+        return AnswerHashtag.create(answer, mock(Hashtag.class), false);
     }
 
     public static AnswerHashtag createAnswerHashtagWithHashtag(Hashtag hashtag) {
-        return AnswerHashtag.create(mock(Answer.class), hashtag);
+        return AnswerHashtag.create(mock(Answer.class), hashtag, false);
     }
 
     public static AnswerHashtag[] createMultipleAnswerHashtags(Answer answer, Hashtag... hashtags) {
         return java.util.Arrays.stream(hashtags)
-                .map(hashtag -> AnswerHashtag.create(answer, hashtag))
+                .map(hashtag -> AnswerHashtag.create(answer, hashtag, false))
                 .toArray(AnswerHashtag[]::new);
     }
 
     public static AnswerHashtag[] createMultipleAnswerHashtags(Hashtag hashtag, Answer... answers) {
         return java.util.Arrays.stream(answers)
-                .map(answer -> AnswerHashtag.create(answer, hashtag))
+                .map(answer -> AnswerHashtag.create(answer, hashtag, false))
                 .toArray(AnswerHashtag[]::new);
     }
 
@@ -43,20 +44,20 @@ public class AnswerHashtagFixture {
         return java.util.Arrays.stream(hashtagNames)
                 .map(name -> {
                     Hashtag hashtag = HashtagFixture.createHashtag(name);
-                    return AnswerHashtag.create(answer, hashtag);
+                    return AnswerHashtag.create(answer, hashtag, false);
                 })
                 .toArray(AnswerHashtag[]::new);
     }
 
     public static AnswerHashtag createAnswerHashtagWithNullAnswer() {
-        return AnswerHashtag.create(null, mock(Hashtag.class));
+        return AnswerHashtag.create(null, mock(Hashtag.class), false);
     }
 
     public static AnswerHashtag createAnswerHashtagWithNullHashtag() {
-        return AnswerHashtag.create(mock(Answer.class), null);
+        return AnswerHashtag.create(mock(Answer.class), null, false);
     }
 
     public static AnswerHashtag createAnswerHashtagWithBothNull() {
-        return AnswerHashtag.create(null, null);
+        return AnswerHashtag.create(null, null, false);
     }
 }
