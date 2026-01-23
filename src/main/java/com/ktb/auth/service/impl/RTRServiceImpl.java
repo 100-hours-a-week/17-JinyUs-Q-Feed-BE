@@ -4,20 +4,20 @@ import com.ktb.auth.domain.RefreshToken;
 import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.domain.TokenFamily;
 import com.ktb.auth.domain.UserAccount;
+import com.ktb.auth.exception.account.AccountNotFoundException;
+import com.ktb.auth.exception.family.FamilyRevokedException;
+import com.ktb.auth.exception.family.TokenFamilyNotFoundException;
+import com.ktb.auth.exception.token.InvalidRefreshTokenException;
+import com.ktb.auth.exception.token.TokenReuseDetectedException;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
 import com.ktb.auth.repository.UserAccountRepository;
 import com.ktb.auth.service.RTRService;
 import com.ktb.auth.service.TokenService;
-import com.ktb.common.domain.ErrorCode;
-import com.ktb.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * RTR Service 구현체
- */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,9 +30,8 @@ public class RTRServiceImpl implements RTRService {
     @Override
     public void detectReuse(TokenService.RefreshTokenEntity tokenEntity) {
         if (tokenEntity.used()) {
-            // 토큰 재사용 감지 -> Family 무효화
             revokeFamily(tokenEntity.familyId(), RevokeReason.REUSE_DETECTED);
-            throw new TokenReuseDetectedException();
+            throw new TokenReuseDetectedException(tokenEntity.familyId());
         }
     }
 
@@ -40,7 +39,7 @@ public class RTRServiceImpl implements RTRService {
     @Transactional
     public void revokeFamily(Long familyId, RevokeReason reason) {
         TokenFamily family = tokenFamilyRepository.findById(familyId)
-                .orElseThrow(() -> new IllegalArgumentException("TokenFamily를 찾을 수 없습니다."));
+                .orElseThrow(() -> new TokenFamilyNotFoundException(familyId));
 
         family.revoke(reason);
     }
@@ -49,7 +48,7 @@ public class RTRServiceImpl implements RTRService {
     @Transactional
     public void markAsUsed(Long refreshTokenId) {
         RefreshToken token = refreshTokenRepository.findById(refreshTokenId)
-                .orElseThrow(() -> new IllegalArgumentException("RefreshToken을 찾을 수 없습니다."));
+                .orElseThrow(() -> new InvalidRefreshTokenException("RefreshToken을 찾을 수 없습니다."));
 
         token.markAsUsed();
     }
@@ -58,7 +57,7 @@ public class RTRServiceImpl implements RTRService {
     @Transactional
     public TokenFamily createFamily(Long accountId, String deviceInfo, String clientIp) {
         UserAccount account = userAccountRepository.findById(accountId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new AccountNotFoundException(accountId));
 
         TokenFamily family = TokenFamily.create(account, deviceInfo, clientIp);
         return tokenFamilyRepository.save(family);
@@ -67,7 +66,7 @@ public class RTRServiceImpl implements RTRService {
     @Override
     public void validateFamilyActive(Long familyId) {
         TokenFamily family = tokenFamilyRepository.findById(familyId)
-                .orElseThrow(FamilyRevokedException::new);
+                .orElseThrow(() -> new TokenFamilyNotFoundException(familyId));
 
         if (family.isRevoked()) {
             throw new FamilyRevokedException();
@@ -78,16 +77,4 @@ public class RTRServiceImpl implements RTRService {
         }
     }
 
-    // 예외 클래스
-    private static class TokenReuseDetectedException extends BusinessException {
-        public TokenReuseDetectedException() {
-            super(ErrorCode.TOKEN_REUSE_DETECTED);
-        }
-    }
-
-    private static class FamilyRevokedException extends BusinessException {
-        public FamilyRevokedException() {
-            super(ErrorCode.FAMILY_REVOKED);
-        }
-    }
 }

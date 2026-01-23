@@ -1,5 +1,6 @@
 package com.ktb.auth.security.adapter;
 
+import com.ktb.auth.exception.security.InvalidAuthenticatedUserException;
 import com.ktb.auth.security.abstraction.AuthenticatedUser;
 import com.ktb.auth.security.abstraction.AuthenticationContextManager;
 import com.ktb.auth.security.abstraction.RequestContext;
@@ -55,15 +56,10 @@ public class SpringSecurityContextManager implements AuthenticationContextManage
         log.debug("Spring Security 인증 컨텍스트 초기화");
     }
 
-    /**
-     * AuthenticatedUser에서 원본 UserAccount 추출
-     */
     private com.ktb.auth.domain.UserAccount getUnderlyingAccount(AuthenticatedUser user) {
         if (user instanceof AuthenticatedUserAdapter adapter) {
             return adapter.getAccount();
         }
-        throw new IllegalArgumentException(
-                "Unsupported AuthenticatedUser type: " + user.getClass().getName()
-        );
+        throw new InvalidAuthenticatedUserException(user.getClass().getName());
     }
 }

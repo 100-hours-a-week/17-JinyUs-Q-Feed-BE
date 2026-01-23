@@ -1,9 +1,19 @@
 package com.ktb.auth.security.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.ktb.auth.domain.UserAccount;
+import com.ktb.auth.exception.token.InvalidAccessTokenException;
 import com.ktb.auth.repository.UserAccountRepository;
 import com.ktb.auth.security.abstraction.AuthenticatedUser;
 import com.ktb.auth.service.TokenService;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,18 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-
-/**
- * JwtAuthenticationService 순수 단위 테스트
- * - Servlet Mock 불필요
- * - Spring Security Mock 불필요
- * - 빠른 실행 (ms 단위)
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("JwtAuthenticationService 단위 테스트 (DIP 적용)")
 class JwtAuthenticationServiceTest {
@@ -108,7 +106,7 @@ class JwtAuthenticationServiceTest {
     void authenticate_WithExpiredToken_ShouldReturnEmpty() {
         // given
         when(tokenService.validateAccessToken(EXPIRED_TOKEN))
-                .thenThrow(new RuntimeException("토큰 만료"));
+                .thenThrow(new InvalidAccessTokenException("토큰 만료"));
 
         // when
         Optional<AuthenticatedUser> result = authenticationService.authenticate(EXPIRED_TOKEN);
@@ -125,7 +123,7 @@ class JwtAuthenticationServiceTest {
         // given
         String tamperedToken = "tampered.jwt.token";
         when(tokenService.validateAccessToken(tamperedToken))
-                .thenThrow(new SecurityException("잘못된 서명"));
+                .thenThrow(new InvalidAccessTokenException("잘못된 서명"));
 
         // when
         Optional<AuthenticatedUser> result = authenticationService.authenticate(tamperedToken);
