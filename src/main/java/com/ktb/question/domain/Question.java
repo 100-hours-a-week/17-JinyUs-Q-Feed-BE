@@ -1,8 +1,11 @@
 package com.ktb.question.domain;
 
 import com.ktb.common.domain.BaseActivatableEntity;
+import com.ktb.common.domain.ErrorCode;
 import com.ktb.question.exception.QuestionAlreadyDeletedException;
 import com.ktb.question.exception.QuestionInvalidContentException;
+import com.ktb.question.exception.QuestionRequiredCategoryException;
+import com.ktb.question.exception.QuestionRequiredTypeException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,6 +29,9 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString
 public class Question extends BaseActivatableEntity {
+    private static final int MIN_CONTENT_LENGTH = 2;
+    private static final int MAX_CONTENT_LENGTH = 200;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "question_id")
@@ -45,6 +51,8 @@ public class Question extends BaseActivatableEntity {
     @Builder
     private Question(String content, QuestionType type, QuestionCategory category) {
         validateContent(content);
+        validateType(type);
+        validateCategory(category);
         this.content = content;
         this.type = type;
         this.category = category;
@@ -63,20 +71,25 @@ public class Question extends BaseActivatableEntity {
     }
 
     public void updateType(QuestionType type) {
+        validateNotDeleted();
+        validateType(type);
         this.type = type;
     }
 
     public void updateCategory(QuestionCategory category) {
+        validateNotDeleted();
+        validateCategory(category);
         this.category = category;
     }
 
     public void updateContent(String content) {
+        validateNotDeleted();
         validateContent(content);
         this.content = content;
     }
 
     public void delete() {
-        if (isEnabled()) {
+        if (getDeletedAt() != null) {
             throw new QuestionAlreadyDeletedException(id);
         }
         disable();
@@ -84,15 +97,40 @@ public class Question extends BaseActivatableEntity {
     }
 
     public void activate() {
+        validateNotDeleted();
         enable();
     }
 
     private void validateContent(String content) {
         if (content == null || content.trim().isEmpty()) {
-            throw new QuestionInvalidContentException("질문 내용은 필수입니다.");
+            throw new QuestionInvalidContentException(ErrorCode.QUESTION_CONTENT_REQUIRED);
         }
-        if (content.length() > 200) {
-            throw new QuestionInvalidContentException("질문 내용은 200자를 초과할 수 없습니다.");
+        if (!content.equals(content.trim())) {
+            throw new QuestionInvalidContentException(ErrorCode.QUESTION_CONTENT_HAS_SPACES);
+        }
+        if (content.length() < MIN_CONTENT_LENGTH) {
+            throw new QuestionInvalidContentException(ErrorCode.QUESTION_CONTENT_TOO_SHORT);
+        }
+        if (content.length() > MAX_CONTENT_LENGTH) {
+            throw new QuestionInvalidContentException(ErrorCode.QUESTION_CONTENT_TOO_LONG);
+        }
+    }
+
+    private void validateType(QuestionType type) {
+        if (type == null) {
+            throw new QuestionRequiredTypeException();
+        }
+    }
+
+    private void validateCategory(QuestionCategory category) {
+        if (category == null) {
+            throw new QuestionRequiredCategoryException();
+        }
+    }
+
+    private void validateNotDeleted() {
+        if (getDeletedAt() != null) {
+            throw new QuestionAlreadyDeletedException(id);
         }
     }
 }
