@@ -2,7 +2,7 @@ package com.ktb.auth.service;
 
 import com.ktb.auth.domain.OAuthProvider;
 import com.ktb.auth.domain.UserAccount;
-import com.ktb.auth.dto.KakaoUserInfo;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 
 public interface OAuthDomainService {
 
@@ -19,7 +19,7 @@ public interface OAuthDomainService {
     /**
      * OAuth 사용자 조회 또는 생성
      */
-    UserAccount findOrCreateAccount(OAuthProvider provider, String providerUserId, KakaoUserInfo userInfo);
+    UserAccount findOrCreateAccount(OAuthProvider provider, String providerUserId, KakaoUserInfoResponse userInfo);
 
     /**
      * OAuth 연동 정보 갱신
