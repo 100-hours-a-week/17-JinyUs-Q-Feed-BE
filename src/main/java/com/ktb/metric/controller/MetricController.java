@@ -6,6 +6,7 @@ import com.ktb.metric.dto.MetricDetailResponse;
 import com.ktb.metric.dto.MetricListResponse;
 import com.ktb.metric.dto.MetricUpdateRequest;
 import com.ktb.metric.service.MetricService;
+import com.ktb.swagger.metric.MetricApi;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/metrics")
 @RequiredArgsConstructor
 @Validated
-public class MetricController {
+public class MetricController implements MetricApi {
 
     private final MetricService metricService;
 
@@ -40,6 +41,7 @@ public class MetricController {
      * 평가 지표 목록 조회
      */
     @GetMapping
+    @Override
     public ResponseEntity<ApiResponse<MetricListResponse>> getMetrics(
             @RequestParam(required = false) Boolean useYn,
             @RequestParam(required = false) Long cursor,
@@ -53,6 +55,7 @@ public class MetricController {
      * 평가 지표 상세 조회
      */
     @GetMapping("/{metricId}")
+    @Override
     public ResponseEntity<ApiResponse<MetricDetailResponse>> getMetric(
             @PathVariable Long metricId
     ) {
@@ -64,6 +67,7 @@ public class MetricController {
      * 평가 지표 생성
      */
     @PostMapping
+    @Override
     public ResponseEntity<ApiResponse<MetricDetailResponse>> createMetric(
             @Valid @RequestBody MetricCreateRequest request
     ) {
@@ -76,6 +80,7 @@ public class MetricController {
      * 평가 지표 수정
      */
     @PatchMapping("/{metricId}")
+    @Override
     public ResponseEntity<ApiResponse<MetricDetailResponse>> updateMetric(
             @PathVariable Long metricId,
             @Valid @RequestBody MetricUpdateRequest request
@@ -88,6 +93,7 @@ public class MetricController {
      * 평가 지표 삭제 (비활성화)
      */
     @DeleteMapping("/{metricId}")
+    @Override
     public ResponseEntity<ApiResponse<Void>> deleteMetric(
             @PathVariable Long metricId
     ) {

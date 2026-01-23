@@ -12,6 +12,7 @@ import com.ktb.question.dto.QuestionListResponse;
 import com.ktb.question.dto.QuestionSearchResponse;
 import com.ktb.question.dto.QuestionUpdateRequest;
 import com.ktb.question.service.QuestionService;
+import com.ktb.swagger.question.QuestionApi;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -32,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/questions")
 @RequiredArgsConstructor
 @Validated
-public class QuestionController {
+public class QuestionController implements QuestionApi {
 
     private final QuestionService questionService;
 
@@ -40,6 +41,7 @@ public class QuestionController {
      * 질문 목록 조회
      */
     @GetMapping
+    @Override
     public ResponseEntity<ApiResponse<QuestionListResponse>> getQuestions(
             @RequestParam(required = false) QuestionCategory category,
             @RequestParam(required = false) QuestionType type,
@@ -54,6 +56,7 @@ public class QuestionController {
      * 질문 상세 조회
      */
     @GetMapping("/{questionId}")
+    @Override
     public ResponseEntity<ApiResponse<QuestionDetailResponse>> getQuestionDetail(
             @PathVariable Long questionId
     ) {
@@ -65,6 +68,7 @@ public class QuestionController {
      * 질문 검색
      */
     @GetMapping("/search")
+    @Override
     public ResponseEntity<ApiResponse<QuestionSearchResponse>> searchQuestions(
             @RequestParam(name = "q") String keyword,
             @RequestParam(name = "category", required = false) QuestionCategory category,
@@ -80,6 +84,7 @@ public class QuestionController {
      * 질문 생성
      */
     @PostMapping
+    @Override
     public ResponseEntity<ApiResponse<QuestionDetailResponse>> createQuestion(
             @Valid @RequestBody QuestionCreateRequest request
     ) {
@@ -92,6 +97,7 @@ public class QuestionController {
      * 질문 수정
      */
     @PatchMapping("/{questionId}")
+    @Override
     public ResponseEntity<ApiResponse<QuestionDetailResponse>> updateQuestion(
             @PathVariable Long questionId,
             @RequestBody QuestionUpdateRequest request
@@ -104,6 +110,7 @@ public class QuestionController {
      * 질문 삭제 (Soft Delete)
      */
     @DeleteMapping("/{questionId}")
+    @Override
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             @PathVariable Long questionId
     ) {
@@ -115,6 +122,7 @@ public class QuestionController {
      * 질문 핵심 키워드 조회
      */
     @GetMapping("/{questionId}/keywords")
+    @Override
     public ResponseEntity<ApiResponse<QuestionKeywordListResponse>> getQuestionKeywords(
             @PathVariable Long questionId
     ) {
@@ -126,6 +134,7 @@ public class QuestionController {
      * 질문 핵심 키워드 포함 여부 확인
      */
     @PostMapping("/{questionId}/keyword-checks")
+    @Override
     public ResponseEntity<ApiResponse<QuestionKeywordCheckResponse>> checkQuestionKeyword(
             @PathVariable Long questionId,
             @Valid @RequestBody QuestionKeywordCheckRequest request

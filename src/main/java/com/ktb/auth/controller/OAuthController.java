@@ -10,6 +10,7 @@ import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.auth.service.CookieService;
 import com.ktb.auth.service.OAuthApplicationService;
 import com.ktb.common.dto.ApiResponse;
+import com.ktb.swagger.auth.OAuthApi;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
-public class OAuthController {
+public class OAuthController implements OAuthApi {
 
     private final OAuthApplicationService oauthApplicationService;
     private final CookieService cookieService;
@@ -42,6 +43,7 @@ public class OAuthController {
      * GET /api/auth/oauth/authorization-url?provider=kakao
      */
     @GetMapping("/oauth/authorization-url")
+    @Override
     public ResponseEntity<ApiResponse<AuthorizationUrlResult>> getAuthorizationUrl(
             @RequestParam String provider
     ) {
@@ -57,6 +59,7 @@ public class OAuthController {
      * GET /api/auth/oauth/{provider}/callback?code=xxx&state=yyy
      */
     @GetMapping("/oauth/{provider}/callback")
+    @Override
     public ResponseEntity<ApiResponse<OAuthLoginResponseDto>> handleCallback(
             @PathVariable String provider,
             @RequestParam String code,
@@ -91,6 +94,7 @@ public class OAuthController {
      * POST /api/auth/tokens
      */
     @PostMapping("/tokens")
+    @Override
     public ResponseEntity<ApiResponse<TokenRefreshResponseDto>> refreshTokens(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
@@ -122,6 +126,7 @@ public class OAuthController {
      * POST /api/auth/logout
      */
     @PostMapping("/logout")
+    @Override
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal SecurityUserAccount principal,
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
@@ -150,6 +155,7 @@ public class OAuthController {
      * POST /api/auth/logout/all
      */
     @PostMapping("/logout/all")
+    @Override
     public ResponseEntity<ApiResponse<LogoutAllResponse>> logoutAll(
             @AuthenticationPrincipal SecurityUserAccount principal,
             HttpServletResponse response
