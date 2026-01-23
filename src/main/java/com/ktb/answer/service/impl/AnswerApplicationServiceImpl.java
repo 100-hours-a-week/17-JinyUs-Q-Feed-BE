@@ -8,9 +8,7 @@ import com.ktb.answer.dto.AnswerSubmitCommand;
 import com.ktb.answer.dto.AnswerSubmitResult;
 import com.ktb.answer.dto.FeedbackResult;
 import com.ktb.answer.dto.ImmediateFeedbackResult;
-import com.ktb.answer.dto.response.AnswerSubmitResponse.ImmediateFeedback;
 import com.ktb.answer.exception.AnswerAccessDeniedException;
-import com.ktb.answer.exception.AnswerInvalidContentException;
 import com.ktb.answer.exception.AnswerNotFoundException;
 import com.ktb.answer.repository.AnswerRepository;
 import com.ktb.answer.service.AnswerApplicationService;
@@ -22,6 +20,11 @@ import com.ktb.file.exception.FileExtensionNotAllowedException;
 import com.ktb.file.exception.FileNotFoundException;
 import com.ktb.file.exception.FileSizeExceededException;
 import com.ktb.file.exception.FileStorageMigrationException;
+import com.ktb.hashtag.domain.AnswerHashtag;
+import com.ktb.hashtag.domain.Hashtag;
+import com.ktb.hashtag.exception.HashtagNotFoundException;
+import com.ktb.hashtag.repository.AnswerHashtagRepository;
+import com.ktb.hashtag.repository.HashtagRepository;
 import com.ktb.question.domain.Question;
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.dto.QuestionDetailResponse;
@@ -29,6 +32,7 @@ import com.ktb.question.exception.QuestionDisabledException;
 import com.ktb.question.exception.QuestionNotFoundException;
 import com.ktb.question.service.QuestionService;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +49,8 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
     private final QuestionService questionService;
     private final UserAccountService userAccountService;
     private final ImmediateFeedbackService immediateFeedbackService;
+    private final AnswerHashtagRepository answerHashtagRepository;
+    private final HashtagRepository hashtagRepository;
 
     @Override
     public Slice<?> getList(
@@ -89,21 +95,12 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
             FileSizeExceededException, FileExtensionNotAllowedException,
             FileNotFoundException, FileAlreadyDeletedException, FileStorageMigrationException {
 
-        // TODO: 구현 필요
-        // 파일 업로드 처리 (있는 경우)
-        // STT 처리 (음성 파일인 경우)
-        // 즉각 피드백 생성 (동기)
-        // AI 피드백 요청 이벤트 발행 (비동기)
-        // 결과 반환
-
         log.info("Submitting answer for questionId: {}, accountId: {}", command.questionId(), accountId);
 
         QuestionDetailResponse question = questionService.getQuestionDetail(command.questionId());
         validateQuestionEnabled(question);
 
         UserAccount account = userAccountService.findById(accountId);
-
-        // TODO: 파일 업로드 및 STT 처리
 
         Answer answer = Answer.create(
                 Question.createWithQuestionId(question.questionId()),
@@ -114,14 +111,37 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
 
         Answer savedAnswer = answerRepository.save(answer);
 
-        ImmediateFeedback immediateFeedback = immediateFeedbackService.evaluate(
+        ImmediateFeedbackResult immediateFeedback = immediateFeedbackService.evaluate(
                 question.questionId(),
-                answer.getContent()
+                savedAnswer.getContent()
         );
 
-        // TODO: MVP V2 AI 피드백 이벤트 발행
+        saveAnswerHashtags(savedAnswer, immediateFeedback);
 
-        return AnswerSubmitResult.processing(savedAnswer.getId(), ImmediateFeedbackResult.from(immediateFeedback));
+        // TODO: MVP V2 AI 피드백 이벤트 발행
+        return AnswerSubmitResult.processing(savedAnswer.getId(), immediateFeedback);
+    }
+
+    private void saveAnswerHashtags(Answer answer, ImmediateFeedbackResult feedback) {
+        List<AnswerHashtag> answerHashtags = feedback.keywords().stream()
+            .map(keywordResult -> {
+                Hashtag hashtag = hashtagRepository.findById(keywordResult.keywordId())
+                    .orElseThrow(() -> new HashtagNotFoundException(keywordResult.keywordId()));
+
+                return AnswerHashtag.create(
+                    answer,
+                    hashtag,
+                    keywordResult.included()
+                );
+            })
+            .toList();
+
+        answerHashtagRepository.saveAll(answerHashtags);
+
+        log.debug("AnswerHashtags saved - answerId: {}, total: {}, included: {}",
+                  answer.getId(),
+                  answerHashtags.size(),
+                  answerHashtags.stream().filter(ah -> ah.isIncluded()).count());
     }
 
     @Override
