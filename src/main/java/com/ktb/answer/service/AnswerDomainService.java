@@ -12,6 +12,12 @@ import org.springframework.stereotype.Service;
 @Service
 public interface AnswerDomainService {
     /**
+     * 답변 조회
+     * @return 조회된 Answer 엔티티
+     */
+    public Answer getAnswer(Long answerId);
+
+    /**
      * 답변 생성
      * @return 생성된 Answer 엔티티
      */

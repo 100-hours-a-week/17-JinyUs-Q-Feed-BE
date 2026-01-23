@@ -15,7 +15,7 @@ public record ImmediateFeedbackResult(List<KeywordCheckResult> keywords) {
         }
 
         List<KeywordCheckResult> results = feedback.keywords().stream()
-                .map(keyword -> new KeywordCheckResult(keyword.keyword(), keyword.included()))
+                .map(keyword -> new KeywordCheckResult(null, keyword.keyword(), keyword.included()))
                 .collect(Collectors.toList());
 
         return new ImmediateFeedbackResult(results);

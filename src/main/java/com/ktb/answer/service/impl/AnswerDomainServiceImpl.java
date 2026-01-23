@@ -5,6 +5,7 @@ import com.ktb.answer.domain.AnswerStatus;
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.exception.AnswerAccessDeniedException;
 import com.ktb.answer.exception.AnswerInvalidContentException;
+import com.ktb.answer.exception.AnswerNotFoundException;
 import com.ktb.answer.exception.DuplicateAnswerException;
 import com.ktb.answer.exception.InvalidAnswerContentException;
 import com.ktb.answer.exception.InvalidAnswerStatusTransitionException;
@@ -28,6 +29,12 @@ public class AnswerDomainServiceImpl implements AnswerDomainService {
     private final UserAccountRepository userAccountRepository;
 
     private static final int MAX_ANSWER_CONTENT_LENGTH = 1_500;
+
+    @Override
+    public Answer getAnswer(Long answerId) {
+        return answerRepository.findById(answerId)
+            .orElseThrow(() -> new AnswerNotFoundException(answerId));
+    }
 
     @Override
     public Answer createAnswer(Long accountId, Long questionId, String answerContent,
