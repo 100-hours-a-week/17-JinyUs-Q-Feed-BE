@@ -75,14 +75,14 @@ class OAuthIntegrationTest {
         when(kakaoOAuth2Client.getUserInfo(kakaoAccessToken)).thenReturn(userInfo);
 
         // 1. Authorization URL 생성
-        MvcResult urlResult = mockMvc.perform(get("/api/v1/auth/oauth/authorization-url")
+        MvcResult urlResult = mockMvc.perform(get("/api/auth/oauth/authorization-url")
                         .param("provider", "kakao"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.authorizationUrl").exists())
                 .andReturn();
 
         // 2. OAuth 콜백 처리 (신규 사용자)
-        MvcResult callbackResult = mockMvc.perform(get("/api/v1/auth/oauth/kakao/callback")
+        MvcResult callbackResult = mockMvc.perform(get("/api/auth/oauth/kakao/callback")
                         .param("code", code)
                         .param("state", extractStateFromUrl(urlResult)))
                 .andExpect(status().isOk())
@@ -119,7 +119,7 @@ class OAuthIntegrationTest {
         String oldRefreshToken = extractRefreshTokenFromCookie(performLogin(state));
 
         // 1. Refresh Token 사용
-        MvcResult refreshResult = mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        MvcResult refreshResult = mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", oldRefreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").exists())
@@ -130,12 +130,12 @@ class OAuthIntegrationTest {
         assertThat(newRefreshToken).isNotEqualTo(oldRefreshToken);
 
         // 2. 이전 Refresh Token 재사용 시도 → 예외 발생
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", oldRefreshToken)))
                 .andExpect(status().isForbidden()); // TOKEN_REUSE_DETECTED
 
         // 3. 새 Refresh Token도 사용 불가 확인 (Family 폐기됨)
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", newRefreshToken)))
                 .andExpect(status().isUnauthorized()); // FAMILY_REVOKED
     }
@@ -154,18 +154,18 @@ class OAuthIntegrationTest {
         String device2RefreshToken = extractRefreshTokenFromCookie(performLogin(state2));
 
         // 2. 각 기기에서 Token Refresh
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", device1RefreshToken)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", device2RefreshToken)))
                 .andExpect(status().isOk());
 
         assertThat(tokenFamilyRepository.count()).isEqualTo(2);
 
         // 3. 전체 로그아웃
-        mockMvc.perform(post("/api/v1/auth/logout/all").with(csrf())
+        mockMvc.perform(post("/api/auth/logout/all").with(csrf())
                         .header("Authorization", "Bearer valid.token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.revokedSessionsCount").value(2));
@@ -184,7 +184,7 @@ class OAuthIntegrationTest {
         String stolenRefreshToken = extractRefreshTokenFromCookie(performLogin(state));
 
         // 1. 정상 사용자가 Token Refresh
-        MvcResult legitimateRefresh = mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        MvcResult legitimateRefresh = mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", stolenRefreshToken)))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -192,12 +192,12 @@ class OAuthIntegrationTest {
         String newRefreshToken = extractRefreshTokenFromCookie(legitimateRefresh);
 
         // 2. 공격자가 탈취한 토큰 재사용 시도 → Family 폐기
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", stolenRefreshToken)))
                 .andExpect(status().isForbidden());
 
         // 3. 정상 사용자의 새 토큰도 무효화됨 (보안을 위한 Family 폐기)
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", newRefreshToken)))
                 .andExpect(status().isUnauthorized());
 
@@ -216,7 +216,7 @@ class OAuthIntegrationTest {
     }
 
     private String generateStateAndLogin() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/v1/auth/oauth/authorization-url")
+        MvcResult result = mockMvc.perform(get("/api/auth/oauth/authorization-url")
                         .param("provider", "kakao"))
                 .andReturn();
         return extractStateFromUrl(result);
@@ -229,7 +229,7 @@ class OAuthIntegrationTest {
         when(kakaoOAuth2Client.getAccessToken(anyString())).thenReturn("kakao.token");
         when(kakaoOAuth2Client.getUserInfo(anyString())).thenReturn(userInfo);
 
-        return mockMvc.perform(get("/api/v1/auth/oauth/kakao/callback")
+        return mockMvc.perform(get("/api/auth/oauth/kakao/callback")
                         .param("code", code)
                         .param("state", state))
                 .andExpect(status().isOk())

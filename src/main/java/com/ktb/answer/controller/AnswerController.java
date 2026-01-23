@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Answer API", description = "답변 관리 API")
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
 public class AnswerController {
@@ -69,7 +69,7 @@ public class AnswerController {
         // 4. Result를 Response DTO로 변환
         // 5. ApiResponse로 래핑하여 반환
 
-        log.info("GET /api/v1/answers - accountId: {}", accountId);
+        log.info("GET /api/answers - accountId: {}", accountId);
 
         // TODO: 임시 구현 (Service 연동 필요)
         return ResponseEntity.ok(
@@ -97,7 +97,7 @@ public class AnswerController {
         // 4. Result를 Response DTO로 변환
         // 5. ApiResponse로 래핑하여 반환
 
-        log.info("GET /api/v1/answers/{} - accountId: {}", answerId, accountId);
+        log.info("GET /api/answers/{} - accountId: {}", answerId, accountId);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(MESSAGE_ANSWER_DETAIL_RETRIEVED, null)
@@ -120,7 +120,7 @@ public class AnswerController {
 
         AnswerSubmitResult submitResult = answerApplicationService.submit(accountId, command);
 
-        log.info("POST /api/v1/interview/answers - accountId: {}, questionId: {}",
+        log.info("POST /api/interview/answers - accountId: {}, questionId: {}",
                 accountId, request.questionId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -149,7 +149,7 @@ public class AnswerController {
         // 5. Result를 Response DTO로 변환
         // 6. ApiResponse로 래핑하여 201 Created 반환
 
-        log.info("POST /api/v1/interview/sessions/{}/answers - accountId: {}, questionId: {}",
+        log.info("POST /api/interview/sessions/{}/answers - accountId: {}, questionId: {}",
                 sessionId, accountId, request.questionId());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -172,7 +172,7 @@ public class AnswerController {
         Long accountId = principal.getAccount().getId();
         FeedbackResponse feedbackResponse = aiFeedbackOrchestrator.getFeedbackSync(answerId, accountId);
 
-        log.info("GET /api/v1/interviews/answers/{}/feedback - accountId: {}", answerId, accountId);
+        log.info("GET /api/interviews/answers/{}/feedback - accountId: {}", answerId, accountId);
 
         return ResponseEntity.ok(
                 new ApiResponse<>(MESSAGE_FEEDBACK_RETRIEVED, feedbackResponse)

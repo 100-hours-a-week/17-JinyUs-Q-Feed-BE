@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * OAuth 인증 Controller
  */
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class OAuthController {
@@ -39,7 +39,7 @@ public class OAuthController {
 
     /**
      * OAuth 인증 URL 생성
-     * GET /api/v1/auth/oauth/authorization-url?provider=kakao
+     * GET /api/auth/oauth/authorization-url?provider=kakao
      */
     @GetMapping("/oauth/authorization-url")
     public ResponseEntity<ApiResponse<AuthorizationUrlResult>> getAuthorizationUrl(
@@ -54,7 +54,7 @@ public class OAuthController {
 
     /**
      * OAuth 콜백 처리
-     * GET /api/v1/auth/oauth/{provider}/callback?code=xxx&state=yyy
+     * GET /api/auth/oauth/{provider}/callback?code=xxx&state=yyy
      */
     @GetMapping("/oauth/{provider}/callback")
     public ResponseEntity<ApiResponse<OAuthLoginResponseDto>> handleCallback(
@@ -88,7 +88,7 @@ public class OAuthController {
 
     /**
      * Token Refresh
-     * POST /api/v1/auth/tokens
+     * POST /api/auth/tokens
      */
     @PostMapping("/tokens")
     public ResponseEntity<ApiResponse<TokenRefreshResponseDto>> refreshTokens(
@@ -119,7 +119,7 @@ public class OAuthController {
 
     /**
      * 로그아웃 (단일 기기)
-     * POST /api/v1/auth/logout
+     * POST /api/auth/logout
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
@@ -147,7 +147,7 @@ public class OAuthController {
 
     /**
      * 전체 기기 로그아웃
-     * POST /api/v1/auth/logout/all
+     * POST /api/auth/logout/all
      */
     @PostMapping("/logout/all")
     public ResponseEntity<ApiResponse<LogoutAllResponse>> logoutAll(
