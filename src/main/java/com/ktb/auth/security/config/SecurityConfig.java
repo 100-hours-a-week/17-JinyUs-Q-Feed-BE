@@ -48,7 +48,7 @@ public class SecurityConfig {
                                 "/",
                                 "/error",
                                 "/actuator/health",
-                                "/api/v1/auth/**",
+                                "/api/auth/**",
                                 "/h2-console/**"
                         ).permitAll()
 
