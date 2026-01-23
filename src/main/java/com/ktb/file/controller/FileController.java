@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "File API", description = "파일 업로드 관리 API")
 @RestController
-@RequestMapping("/api/v1/files")
+@RequestMapping("/api/files")
 @RequiredArgsConstructor
 public class FileController {
 

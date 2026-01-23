@@ -45,7 +45,7 @@ class CookieServiceTest {
         assertThat(cookie.getValue()).isEqualTo(SAMPLE_REFRESH_TOKEN);
         assertThat(cookie.isHttpOnly()).isTrue();
         assertThat(cookie.getSecure()).isTrue();
-        assertThat(cookie.getPath()).isEqualTo("/api/v1/auth");
+        assertThat(cookie.getPath()).isEqualTo("/api/auth");
         assertThat(cookie.getMaxAge()).isEqualTo((int) (REFRESH_TOKEN_EXPIRATION / 1000));
     }
 
@@ -71,7 +71,7 @@ class CookieServiceTest {
         assertThat(cookie.getValue()).isEmpty();
         assertThat(cookie.isHttpOnly()).isTrue();
         assertThat(cookie.getSecure()).isTrue();
-        assertThat(cookie.getPath()).isEqualTo("/api/v1/auth");
+        assertThat(cookie.getPath()).isEqualTo("/api/auth");
         assertThat(cookie.getMaxAge()).isZero();
     }
 

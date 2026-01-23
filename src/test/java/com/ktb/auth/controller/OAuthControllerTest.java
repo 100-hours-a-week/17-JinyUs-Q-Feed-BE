@@ -49,7 +49,7 @@ class OAuthControllerTest {
         when(oauthApplicationService.getAuthorizationUrl("kakao")).thenReturn(result);
 
         // when & then
-        mockMvc.perform(get("/api/v1/auth/oauth/authorization-url")
+        mockMvc.perform(get("/api/auth/oauth/authorization-url")
                         .param("provider", "kakao"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.authorizationUrl").value("https://kauth.kakao.com/oauth/authorize?..."));
@@ -70,7 +70,7 @@ class OAuthControllerTest {
         when(cookieService.createRefreshTokenCookie(REFRESH_TOKEN)).thenReturn(mockCookie);
 
         // when & then
-        mockMvc.perform(get("/api/v1/auth/oauth/kakao/callback")
+        mockMvc.perform(get("/api/auth/oauth/kakao/callback")
                         .param("code", "auth-code")
                         .param("state", "state-123"))
                 .andExpect(status().isOk())
@@ -94,7 +94,7 @@ class OAuthControllerTest {
         when(cookieService.createRefreshTokenCookie(NEW_REFRESH_TOKEN)).thenReturn(newCookie);
 
         // when & then
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf())
+        mockMvc.perform(post("/api/auth/tokens").with(csrf())
                         .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").value("new.access.token"))
@@ -109,7 +109,7 @@ class OAuthControllerTest {
     @DisplayName("쿠키 없이 Refresh 요청 시 400 에러")
     void refreshTokens_WithoutCookie_ShouldReturnBadRequest() throws Exception {
         // when & then
-        mockMvc.perform(post("/api/v1/auth/tokens").with(csrf()))
+        mockMvc.perform(post("/api/auth/tokens").with(csrf()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("missing_refresh_token"));
     }
@@ -124,7 +124,7 @@ class OAuthControllerTest {
         when(cookieService.createExpiredRefreshTokenCookie()).thenReturn(expiredCookie);
 
         // when & then
-        mockMvc.perform(post("/api/v1/auth/logout").with(csrf())
+        mockMvc.perform(post("/api/auth/logout").with(csrf())
                         .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().maxAge("refreshToken", 0));
@@ -143,7 +143,7 @@ class OAuthControllerTest {
         when(cookieService.createExpiredRefreshTokenCookie()).thenReturn(expiredCookie);
 
         // when & then
-        mockMvc.perform(post("/api/v1/auth/logout/all").with(csrf()))
+        mockMvc.perform(post("/api/auth/logout/all").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.revokedSessionsCount").value(3))
                 .andExpect(cookie().maxAge("refreshToken", 0));
