@@ -3,7 +3,8 @@ package com.ktb.auth.service.impl;
 import com.ktb.auth.domain.OAuthProvider;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.domain.UserOAuth;
-import com.ktb.auth.dto.KakaoUserInfo;
+import com.ktb.auth.exception.oauth.OAuthConnectionNotFoundException;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.repository.UserAccountRepository;
 import com.ktb.auth.repository.UserOAuthRepository;
 import com.ktb.auth.service.OAuthDomainService;
@@ -59,18 +60,21 @@ public class OAuthDomainServiceImpl implements OAuthDomainService {
 
     @Override
     @Transactional
-    public UserAccount findOrCreateAccount(OAuthProvider provider, String providerUserId, KakaoUserInfo userInfo) {
+    public UserAccount findOrCreateAccount(OAuthProvider provider, String providerUserId, KakaoUserInfoResponse userInfo) {
         // 기존 OAuth 연동 조회
         return userOAuthRepository.findByProviderAndProviderUserIdWithAccount(provider, providerUserId)
                 .map(UserOAuth::getAccount)
                 .orElseGet(() -> createNewAccount(provider, providerUserId, userInfo));
     }
 
+    private static final String DEFAULT_NICKNAME_PREFIX = "사용자";
+    private static final int DEFAULT_NICKNAME_SUFFIX_LENGTH = 6;
+
     @Override
     @Transactional
     public void updateOAuthLoginInfo(Long oauthId) {
         UserOAuth userOAuth = userOAuthRepository.findById(oauthId)
-                .orElseThrow(() -> new IllegalArgumentException("OAuth 연동을 찾을 수 없습니다."));
+                .orElseThrow(() -> new OAuthConnectionNotFoundException(oauthId));
 
         userOAuth.updateLastLogin();
     }
@@ -78,13 +82,16 @@ public class OAuthDomainServiceImpl implements OAuthDomainService {
     /**
      * 신규 계정 생성 (OAuth 최초 로그인)
      */
-    private UserAccount createNewAccount(OAuthProvider provider, String providerUserId, KakaoUserInfo userInfo) {
+    private UserAccount createNewAccount(OAuthProvider provider, String providerUserId, KakaoUserInfoResponse userInfo) {
         log.info("신규 계정 생성: provider={}, email={}", provider, userInfo.getEmail());
 
         // UserAccount 생성 (email 매핑)
         String nickname = userInfo.getNickname() != null
                 ? userInfo.getNickname()
-                : "사용자" + providerUserId.substring(0, Math.min(6, providerUserId.length()));
+                : DEFAULT_NICKNAME_PREFIX + providerUserId.substring(
+                        0,
+                        Math.min(DEFAULT_NICKNAME_SUFFIX_LENGTH, providerUserId.length())
+                );
 
         UserAccount account = UserAccount.createEmailAccount(userInfo.getEmail(), nickname);
         userAccountRepository.save(account);

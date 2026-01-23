@@ -7,10 +7,14 @@ import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.domain.TokenFamily;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.dto.AuthorizationUrlResult;
-import com.ktb.auth.dto.KakaoUserInfo;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.dto.UserInfo;
+import com.ktb.auth.exception.family.FamilyOwnershipException;
+import com.ktb.auth.exception.family.TokenFamilyNotFoundException;
+import com.ktb.auth.exception.oauth.OAuthProviderException;
+import com.ktb.auth.exception.oauth.UnsupportedProviderException;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
@@ -18,8 +22,6 @@ import com.ktb.auth.service.OAuthApplicationService;
 import com.ktb.auth.service.OAuthDomainService;
 import com.ktb.auth.service.RTRService;
 import com.ktb.auth.service.TokenService;
-import com.ktb.common.domain.ErrorCode;
-import com.ktb.common.exception.BusinessException;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class OAuthApplicationServiceImpl implements OAuthApplicationService {
+
+    private static final int ACCESS_TOKEN_EXPIRES_SECONDS = 600;
+    private static final int REFRESH_TOKEN_EXPIRES_DAYS = 14;
+    private static final String SUPPORTED_PROVIDER_KAKAO = "kakao";
+    private static final String DEFAULT_ROLE = "ROLE_USER";
+    private static final List<String> DEFAULT_ROLES = List.of(DEFAULT_ROLE);
 
     private final KakaoOAuth2Client kakaoOAuth2Client;
     private final OAuthDomainService oauthDomainService;
@@ -59,7 +67,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
     @Override
     public AuthorizationUrlResult getAuthorizationUrl(String provider) {
-        if (!"kakao".equalsIgnoreCase(provider)) {
+        if (!SUPPORTED_PROVIDER_KAKAO.equalsIgnoreCase(provider)) {
             throw new UnsupportedProviderException(provider);
         }
 
@@ -97,7 +105,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
             String kakaoAccessToken = kakaoOAuth2Client.getAccessToken(code);
 
             // 3. Access Token → 사용자 정보
-            KakaoUserInfo userInfo = kakaoOAuth2Client.getUserInfo(kakaoAccessToken);
+            KakaoUserInfoResponse userInfo = kakaoOAuth2Client.getUserInfo(kakaoAccessToken);
 
             // 4. UserAccount 조회 or 생성 (email 매핑)
             UserAccount account = oauthDomainService.findOrCreateAccount(
@@ -115,7 +123,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
             TokenFamily family = rtrService.createFamily(account.getId(), deviceInfo, clientIp);
 
             // 7. JWT 발급
-            String accessToken = tokenService.issueAccessToken(account.getId(), List.of("ROLE_USER"));
+            String accessToken = tokenService.issueAccessToken(account.getId(), DEFAULT_ROLES);
             String refreshToken = jwtProvider.createRefreshToken(account.getId(), family.getUuid());
 
             // 8. RefreshToken DB 저장
@@ -123,7 +131,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
             RefreshToken refreshTokenEntity = RefreshToken.builder()
                     .family(family)
                     .tokenHash(tokenHash)
-                    .expiresAt(LocalDateTime.now().plusDays(14))
+                    .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRES_DAYS))
                     .build();
             refreshTokenRepository.save(refreshTokenEntity);
 
@@ -137,7 +145,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
         } catch (Exception e) {
             log.error("OAuth 로그인 실패: provider={}, error={}", provider, e.getMessage(), e);
-            throw new OAuthProviderException("OAuth 제공자 통신에 실패했습니다: " + e.getMessage());
+            throw new OAuthProviderException();
         }
     }
 
@@ -161,20 +169,20 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
         rtrService.markAsUsed(tokenEntity.id());
 
         // 6. 새로운 Access Token 발급
-        String newAccessToken = tokenService.issueAccessToken(claims.userId(), List.of("ROLE_USER"));
+        String newAccessToken = tokenService.issueAccessToken(claims.userId(), DEFAULT_ROLES);
 
         // 7. 새로운 Refresh Token 발급 (RTR)
         String newRefreshToken = jwtProvider.createRefreshToken(claims.userId(), claims.familyUuid());
 
         // 8. 새로운 RefreshToken DB 저장
         TokenFamily family = tokenFamilyRepository.findByUuid(claims.familyUuid())
-                .orElseThrow(() -> new IllegalArgumentException("TokenFamily를 찾을 수 없습니다."));
+                .orElseThrow(() -> new TokenFamilyNotFoundException(claims.familyUuid()));
 
         String newTokenHash = jwtProvider.generateTokenHash(newRefreshToken);
         RefreshToken newTokenEntity = RefreshToken.builder()
                 .family(family)
                 .tokenHash(newTokenHash)
-                .expiresAt(LocalDateTime.now().plusDays(14))
+                .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRES_DAYS))
                 .build();
         refreshTokenRepository.save(newTokenEntity);
 
@@ -182,7 +190,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
         log.info("Token Refresh 성공: userId={}, familyUuid={}", claims.userId(), claims.familyUuid());
 
-        return new TokenRefreshResult(newAccessToken, newRefreshToken, 600); // 10분 (초 단위)
+        return new TokenRefreshResult(newAccessToken, newRefreshToken, ACCESS_TOKEN_EXPIRES_SECONDS);
     }
 
     @Override
@@ -197,7 +205,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
         // Family UUID로 Family 조회 및 무효화
         TokenFamily family = tokenFamilyRepository.findByUuid(claims.familyUuid())
-                .orElseThrow(() -> new IllegalArgumentException("TokenFamily를 찾을 수 없습니다."));
+                .orElseThrow(() -> new TokenFamilyNotFoundException(claims.familyUuid()));
 
         family.revoke(RevokeReason.USER_LOGOUT);
 
@@ -207,29 +215,10 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
     @Override
     @Transactional
     public int logoutAll(Long accountId) {
-        int count =tokenFamilyRepository.revokeAllByAccountId(accountId, RevokeReason.USER_LOGOUT);
+        int count = tokenFamilyRepository.revokeAllByAccountId(accountId, RevokeReason.USER_LOGOUT);
 
         log.info("전체 로그아웃 성공: accountId={}, revokedCount={}", accountId, count);
         return count;
     }
 
-    // 예외 클래스
-    private static class UnsupportedProviderException extends BusinessException {
-        public UnsupportedProviderException(String provider) {
-            super(ErrorCode.UNSUPPORTED_PROVIDER,
-                    String.format("지원하지 않는 OAuth 제공자입니다: %s", provider));
-        }
-    }
-
-    private static class OAuthProviderException extends BusinessException {
-        public OAuthProviderException(String message) {
-            super(ErrorCode.OAUTH_PROVIDER_ERROR, message);
-        }
-    }
-
-    private static class FamilyOwnershipException extends BusinessException {
-        public FamilyOwnershipException() {
-            super(ErrorCode.FAMILY_OWNERSHIP_MISMATCH);
-        }
-    }
 }
