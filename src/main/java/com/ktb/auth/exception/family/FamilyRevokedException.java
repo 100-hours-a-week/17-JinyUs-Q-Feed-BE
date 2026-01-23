@@ -5,8 +5,13 @@ import com.ktb.common.exception.BusinessException;
 
 public class FamilyRevokedException extends BusinessException {
 
+    public FamilyRevokedException() {
+        super(ErrorCode.FAMILY_REVOKED);
+    }
+
     public FamilyRevokedException(Long familyId) {
         super(ErrorCode.FAMILY_REVOKED,
-                String.format("세션이 이미 종료되었습니다: familyId=%d", familyId));
+            String.format("%s: familyId=%d",ErrorCode.FAMILY_REVOKED.getMessage() , familyId)
+        );
     }
 }
