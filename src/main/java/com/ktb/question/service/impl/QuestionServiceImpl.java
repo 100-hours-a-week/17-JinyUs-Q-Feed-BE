@@ -134,7 +134,12 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public QuestionKeywordListResponse getQuestionKeywords(Long questionId) {
         validateQuestionExists(questionId);
-        List<String> keywords = questionHashtagRepository.findKeywordNamesByQuestionId(questionId);
+        List<QuestionHashtag> tags = questionHashtagRepository.findKeywordNamesByQuestionId(questionId);
+
+        List<String> keywords = tags.stream()
+            .map(questionHashtag -> questionHashtag.getHashtag().getName())
+            .toList();
+
         return new QuestionKeywordListResponse(keywords);
     }
 
@@ -173,7 +178,11 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     private QuestionDetailResponse toDetailResponse(Question question) {
-        List<String> keywords = questionHashtagRepository.findKeywordNamesByQuestionId(question.getId());
+        List<QuestionHashtag> tags = questionHashtagRepository.findKeywordNamesByQuestionId(question.getId());
+
+        List<String> keywords = tags.stream()
+            .map(questionHashtag -> questionHashtag.getHashtag().getName())
+            .toList();
         return new QuestionDetailResponse(
                 question.getId(),
                 question.getContent(),

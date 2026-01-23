@@ -58,6 +58,10 @@ public class Question extends BaseActivatableEntity {
         this.category = category;
     }
 
+    private Question(Long id) {
+        this.id = id;
+    }
+
     public static Question create(
             String content,
             QuestionType type,
@@ -68,6 +72,10 @@ public class Question extends BaseActivatableEntity {
                 .type(type)
                 .category(category)
                 .build();
+    }
+
+    public static Question createWithQuestionId(Long questionId) {
+        return new Question(questionId);
     }
 
     public void updateType(QuestionType type) {
