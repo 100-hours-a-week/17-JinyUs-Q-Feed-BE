@@ -1,13 +1,16 @@
 package com.ktb.auth.jwt;
 
+import com.ktb.auth.exception.token.InvalidAccessTokenException;
+import com.ktb.auth.exception.token.InvalidRefreshTokenException;
+import com.ktb.auth.exception.token.TokenHashingFailedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -30,6 +33,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class JwtProvider {
 
+    private static final String CLAIM_USER_ID = "userId";
+    private static final String CLAIM_ROLES = "roles";
+    private static final String CLAIM_TYPE = "type";
+    private static final String CLAIM_FAMILY_UUID = "familyUuid";
+    private static final String TOKEN_TYPE_ACCESS = "ACCESS";
+    private static final String TOKEN_TYPE_REFRESH = "REFRESH";
+    private static final String HASH_ALGORITHM = "SHA-256";
+
     private final JwtProperties jwtProperties;
     private SecretKey secretKey;
 
@@ -46,9 +57,9 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .claim("userId", userId)
-                .claim("roles", roles)
-                .claim("type", "ACCESS")
+                .claim(CLAIM_USER_ID, userId)
+                .claim(CLAIM_ROLES, roles)
+                .claim(CLAIM_TYPE, TOKEN_TYPE_ACCESS)
                 .issuer(jwtProperties.getIssuer())
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -62,9 +73,9 @@ public class JwtProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .claim("userId", userId)
-                .claim("familyUuid", familyUuid)
-                .claim("type", "REFRESH")
+                .claim(CLAIM_USER_ID, userId)
+                .claim(CLAIM_FAMILY_UUID, familyUuid)
+                .claim(CLAIM_TYPE, TOKEN_TYPE_REFRESH)
                 .issuer(jwtProperties.getIssuer())
                 .issuedAt(now)
                 .expiration(expiryDate)
@@ -73,55 +84,75 @@ public class JwtProvider {
     }
 
     public Claims validateAccessToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new InvalidAccessTokenException("Access Token이 비어 있습니다");
+        }
         try {
             Claims claims = parseClaims(token);
-            String type = claims.get("type", String.class);
+            String type = claims.get(CLAIM_TYPE, String.class);
 
-            if (!"ACCESS".equals(type)) {
-                throw new IllegalArgumentException("Not an Access Token");
+            if (!TOKEN_TYPE_ACCESS.equals(type)) {
+                throw new InvalidAccessTokenException("Access Token 타입이 아닙니다");
             }
 
             return claims;
         } catch (ExpiredJwtException e) {
-            throw new ExpiredJwtException(e.getHeader(), e.getClaims(), "Access Token이 만료되었습니다.");
+            throw new InvalidAccessTokenException("Access Token이 만료되었습니다");
         } catch (SecurityException | MalformedJwtException e) {
-            throw new SecurityException("잘못된 Access Token 서명입니다.");
+            throw new InvalidAccessTokenException("잘못된 Access Token 서명입니다");
         } catch (UnsupportedJwtException e) {
-            throw new UnsupportedJwtException("지원되지 않는 Access Token입니다.");
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Access Token이 잘못되었습니다.");
+            throw new InvalidAccessTokenException("지원되지 않는 Access Token입니다");
+        } catch (JwtException e) {
+            throw new InvalidAccessTokenException("Access Token이 올바르지 않습니다");
         }
     }
 
     public Claims validateRefreshToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new InvalidRefreshTokenException("Refresh Token이 비어 있습니다");
+        }
         try {
             Claims claims = parseClaims(token);
-            String type = claims.get("type", String.class);
+            String type = claims.get(CLAIM_TYPE, String.class);
 
-            if (!"REFRESH".equals(type)) {
-                throw new IllegalArgumentException("Not a Refresh Token");
+            if (!TOKEN_TYPE_REFRESH.equals(type)) {
+                throw new InvalidRefreshTokenException("Refresh Token 타입이 아닙니다");
             }
 
             return claims;
         } catch (ExpiredJwtException e) {
-            throw new ExpiredJwtException(e.getHeader(), e.getClaims(), "Refresh Token이 만료되었습니다.");
+            throw new InvalidRefreshTokenException("Refresh Token이 만료되었습니다");
         } catch (SecurityException | MalformedJwtException e) {
-            throw new SecurityException("잘못된 Refresh Token 서명입니다.");
+            throw new InvalidRefreshTokenException("잘못된 Refresh Token 서명입니다");
         } catch (UnsupportedJwtException e) {
-            throw new UnsupportedJwtException("지원되지 않는 Refresh Token입니다.");
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Refresh Token이 잘못되었습니다.");
+            throw new InvalidRefreshTokenException("지원되지 않는 Refresh Token입니다");
+        } catch (JwtException e) {
+            throw new InvalidRefreshTokenException("Refresh Token이 올바르지 않습니다");
         }
     }
 
     public Long getUserIdFromToken(String token) {
-        Claims claims = parseClaims(token);
-        return claims.get("userId", Long.class);
+        try {
+            if (token == null || token.isBlank()) {
+                throw new InvalidAccessTokenException("Access Token이 비어 있습니다");
+            }
+            Claims claims = parseClaims(token);
+            return claims.get(CLAIM_USER_ID, Long.class);
+        } catch (JwtException e) {
+            throw new InvalidAccessTokenException("Access Token 파싱에 실패했습니다");
+        }
     }
 
     public String getFamilyUuidFromToken(String token) {
-        Claims claims = parseClaims(token);
-        return claims.get("familyUuid", String.class);
+        try {
+            if (token == null || token.isBlank()) {
+                throw new InvalidRefreshTokenException("Refresh Token이 비어 있습니다");
+            }
+            Claims claims = parseClaims(token);
+            return claims.get(CLAIM_FAMILY_UUID, String.class);
+        } catch (JwtException e) {
+            throw new InvalidRefreshTokenException("Refresh Token 파싱에 실패했습니다");
+        }
     }
 
     /**
@@ -129,11 +160,11 @@ public class JwtProvider {
      */
     public String generateTokenHash(String token) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(HASH_ALGORITHM);
             byte[] hash = digest.digest(token.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 알고리즘을 사용할 수 없습니다.", e);
+            throw new TokenHashingFailedException(e);
         }
     }
 

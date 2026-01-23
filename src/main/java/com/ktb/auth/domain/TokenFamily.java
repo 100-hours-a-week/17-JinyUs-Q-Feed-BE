@@ -1,5 +1,6 @@
 package com.ktb.auth.domain;
 
+import com.ktb.auth.exception.family.FamilyRevokedException;
 import com.ktb.common.domain.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,11 +22,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/**
- * RTR Token Family 엔티티
- * - 디바이스별 세션 관리
- * - Reuse Detection 지원
- */
 @Entity
 @Table(
         name = "USER_OAUTH_RTR_FAMILY",
@@ -45,6 +41,8 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = {"account"})
 public class TokenFamily extends BaseTimeEntity {
+
+    private static final int DEFAULT_FAMILY_LIFETIME_DAYS = 30;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,7 +91,7 @@ public class TokenFamily extends BaseTimeEntity {
         this.clientIp = clientIp;
         this.lastUsedAt = LocalDateTime.now();
         this.expiresAt = LocalDateTime.now().plusDays(
-                familyLifetimeDays != null ? familyLifetimeDays : 30
+                familyLifetimeDays != null ? familyLifetimeDays : DEFAULT_FAMILY_LIFETIME_DAYS
         );
         this.revoked = false;
     }
@@ -112,10 +110,10 @@ public class TokenFamily extends BaseTimeEntity {
 
     public void updateLastUsed() {
         if (isRevoked()) {
-            throw new IllegalStateException("무효화된 Family입니다.");
+            throw new FamilyRevokedException(id);
         }
         if (isExpired()) {
-            throw new IllegalStateException("만료된 Family입니다.");
+            throw new FamilyRevokedException(id);
         }
         this.lastUsedAt = LocalDateTime.now();
     }

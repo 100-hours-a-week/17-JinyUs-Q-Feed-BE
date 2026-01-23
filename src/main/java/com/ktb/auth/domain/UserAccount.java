@@ -1,5 +1,6 @@
 package com.ktb.auth.domain;
 
+import com.ktb.auth.exception.account.AccountInvalidNicknameException;
 import com.ktb.common.domain.BaseTimeEntity;
 import com.ktb.file.domain.File;
 import jakarta.persistence.Column;
@@ -45,6 +46,8 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(exclude = {"profileImage", "oauthConnections"})
 public class UserAccount extends BaseTimeEntity {
+
+    private static final int NICKNAME_MAX_LENGTH = 200;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -95,10 +98,10 @@ public class UserAccount extends BaseTimeEntity {
 
     public void updateNickname(String newNickname) {
         if (newNickname == null || newNickname.trim().isEmpty()) {
-            throw new IllegalArgumentException("닉네임은 필수입니다.");
+            throw new AccountInvalidNicknameException();
         }
-        if (newNickname.length() > 200) {
-            throw new IllegalArgumentException("닉네임은 200자를 초과할 수 없습니다.");
+        if (newNickname.length() > NICKNAME_MAX_LENGTH) {
+            throw new AccountInvalidNicknameException();
         }
         this.nickname = newNickname;
     }
