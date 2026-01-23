@@ -1,14 +1,29 @@
 package com.ktb.answer.service.impl;
 
+import com.ktb.ai.feedback.dto.response.AiFeedbackBadCaseFeedback;
+import com.ktb.ai.feedback.dto.response.AiFeedbackData;
+import com.ktb.ai.feedback.dto.response.AiFeedbackFeedback;
+import com.ktb.ai.feedback.dto.response.AiFeedbackMetric;
+import com.ktb.ai.feedback.dto.response.BadCaseType;
+import com.ktb.ai.feedback.service.AiFeedbackService;
+import com.ktb.common.dto.ApiResponse;
 import com.ktb.answer.domain.Answer;
 import com.ktb.answer.domain.AnswerStatus;
 import com.ktb.answer.dto.FeedbackStatus;
+import com.ktb.answer.dto.response.FeedbackResponse;
+import com.ktb.answer.exception.AnswerAccessDeniedException;
 import com.ktb.answer.exception.AnswerNotFoundException;
 import com.ktb.answer.repository.AnswerRepository;
 import com.ktb.answer.service.AiFeedbackOrchestrator;
+import com.ktb.auth.domain.UserAccount;
+import com.ktb.question.domain.Question;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +31,33 @@ import org.springframework.stereotype.Service;
 public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
 
     private final AnswerRepository answerRepository;
+    private final AiFeedbackService aiFeedbackService;
+
+    @Override
+    public FeedbackResponse getFeedbackSync(Long answerId, Long accountId) {
+        log.info("Getting AI feedback synchronously for answerId: {}", answerId);
+
+        Answer answer = answerRepository.findById(answerId)
+            .orElseThrow(() -> new AnswerNotFoundException(answerId));
+
+        Question question = answer.getQuestion();
+        UserAccount account = answer.getAccount();
+
+        validateAnswerOwner(answer.getAccount().getId(), accountId, answerId);
+
+        log.debug("Answer found - answerId: {}, questionId: {}, userId: {}",
+                answerId, question.getId(), account.getId());
+
+        ApiResponse<AiFeedbackData> apiResponse = getAiFeedback(account, question, answer);
+
+        FeedbackResponse response = isBadCase(apiResponse)
+                ? handleBadCaseResponse(answerId, apiResponse)
+                : handleSuccessResponse(apiResponse);
+
+        log.info("AI feedback retrieved successfully for answerId: {}", answerId);
+
+        return response;
+    }
 
     @Override
     public void enqueue(Long answerId) {
@@ -65,6 +107,74 @@ public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
 
         // TODO: 재시도 정책 구현 후 활성화
         throw new UnsupportedOperationException("Feedback retry not yet implemented");
+    }
+
+    private ApiResponse<AiFeedbackData> getAiFeedback(
+        UserAccount account, Question question, Answer answer
+        ) {
+
+        return aiFeedbackService.evaluateSync(
+            account.getId(),
+            question.getId(),
+            question.getType(),
+            question.getCategory(),
+            answer.getType(),
+            question.getContent(),
+            answer.getContent()
+        );
+    }
+
+    private boolean isBadCase(ApiResponse<AiFeedbackData> response) {
+        return "bad_case_detected".equalsIgnoreCase(response.message());
+    }
+
+    private FeedbackResponse handleBadCaseResponse(Long answerId, ApiResponse<AiFeedbackData> apiResponse) {
+        AiFeedbackBadCaseFeedback badCase = apiResponse.data().badCaseFeedback();
+        BadCaseType badCaseType = badCase.getTypeEnum();
+
+        String failureMessage = badCaseType.getMessage() + "\n\n" + badCaseType.getGuidance();
+
+        log.warn("Bad case detected for answerId: {}, type: {}", answerId, badCaseType);
+
+        return FeedbackResponse.failed(failureMessage);
+    }
+
+    private FeedbackResponse handleSuccessResponse(ApiResponse<AiFeedbackData> apiResponse) {
+        AiFeedbackData data = apiResponse.data();
+
+        List<FeedbackResponse.RadarChartMetric> radarChart = convertToRadarChart(data.metrics());
+        String combinedFeedback = combineFeedback(data.feedback());
+
+        return FeedbackResponse.completed(combinedFeedback, radarChart);
+    }
+
+    private List<FeedbackResponse.RadarChartMetric> convertToRadarChart(List<AiFeedbackMetric> metrics) {
+        if (metrics == null) {
+            return null;
+        }
+
+        return metrics.stream()
+                .map(metric -> new FeedbackResponse.RadarChartMetric(
+                        metric.name(),        // metricName
+                        metric.comment(),     // metricDescription
+                        metric.score(),       // score (1~5)
+                        5                     // maxScore
+                ))
+                .collect(Collectors.toList());
+    }
+
+    private String combineFeedback(AiFeedbackFeedback feedback) {
+        if (feedback == null) {
+            return null;
+        }
+
+        return feedback.strengths() + "\n\n" + feedback.improvements();
+    }
+
+    private void validateAnswerOwner(Long answerUserId, Long jwtUserId, Long answerId) {
+        if (!Objects.equals(answerUserId, jwtUserId)) {
+            throw new AnswerAccessDeniedException(jwtUserId, answerUserId);
+        }
     }
 
     private FeedbackStatus mapAnswerStatusToFeedbackStatus(AnswerStatus answerStatus) {
