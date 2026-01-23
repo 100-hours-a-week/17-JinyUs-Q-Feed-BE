@@ -18,7 +18,7 @@ public record AiFeedbackRequest(
         @NotNull(message = "질문 ID는 필수입니다")
         Long questionId,
 
-        @JsonProperty("type")
+        @JsonProperty("question_type")
         @Schema(description = "질문 타입", example = "PRACTICE_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED,
                 allowableValues = {"CS", "SYSTEM_DESIGN", "PORTFOLIO"})
         @NotBlank(message = "질문 타입은 필수입니다")
@@ -27,8 +27,13 @@ public record AiFeedbackRequest(
         @JsonProperty("category")
         @Schema(description = "질문 카테고리", example = "DATABASE", requiredMode = Schema.RequiredMode.REQUIRED,
                 allowableValues = {"OS", "NETWORK", "DB", "COMPUTER_ARCHITECTURE", "ALGORITHM"})
-        @NotBlank(message = "질문 카테고리는 필수입니다")
         String category,
+
+        @JsonProperty("interview_type")
+        @Schema(description = "인터뷰 카테고리", example = "PRACTICE_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED,
+            allowableValues = {"PRACTICE_INTERVIEW", "REAL_INTERVIEW"})
+        @NotBlank(message = "인터뷰 카테고리는 필수입니다")
+        String interviewType,
 
         @JsonProperty("question")
         @Schema(description = "질문 내용", example = "RDBMS와 NoSQL의 차이점에 대해 설명해주세요.",
