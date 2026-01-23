@@ -1,5 +1,6 @@
 package com.ktb.auth.domain;
 
+import com.ktb.auth.exception.oauth.OAuthAlreadyUnlinkedException;
 import com.ktb.common.domain.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,11 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/**
- * OAuth 연동 정보 엔티티
- * - 멀티 OAuth 제공자 지원
- * - Soft Unlink 방식 채택
- */
 @Entity
 @Table(
         name = "USER_OAUTH",
@@ -70,8 +66,6 @@ public class UserOAuth extends BaseTimeEntity {
     @Column(name = "oauth_unlinked_at")
     private LocalDateTime unlinkedAt;
 
-    // === 생성 메서드 ===
-
     @Builder
     private UserOAuth(
             UserAccount account,
@@ -99,49 +93,30 @@ public class UserOAuth extends BaseTimeEntity {
         return oauth;
     }
 
-    // === 연관관계 편의 메서드 ===
-
     protected void setAccount(UserAccount account) {
         this.account = account;
     }
 
-    // === 비즈니스 로직 ===
-
-    /**
-     * OAuth 로그인 처리
-     */
     public void updateLastLogin() {
         if (isUnlinked()) {
-            throw new IllegalStateException("연동 해제된 OAuth입니다.");
+            throw new OAuthAlreadyUnlinkedException(id);
         }
         this.lastLoginAt = LocalDateTime.now();
     }
 
-    /**
-     * OAuth 연동 해제
-     */
     public void unlink() {
         this.unlinkedAt = LocalDateTime.now();
     }
 
-    /**
-     * OAuth 재연동
-     */
     public void relink() {
         this.unlinkedAt = null;
         this.lastLoginAt = LocalDateTime.now();
     }
 
-    /**
-     * 연동 해제 여부 확인
-     */
     public boolean isUnlinked() {
         return unlinkedAt != null;
     }
 
-    /**
-     * 활성 연동 여부 확인
-     */
     public boolean isActive() {
         return unlinkedAt == null;
     }
