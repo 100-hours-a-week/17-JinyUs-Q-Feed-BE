@@ -1,11 +1,9 @@
-package com.ktb.auth.dto;
+package com.ktb.auth.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ktb.auth.dto.KakaoAccount;
 
-/**
- * Kakao 사용자 정보 응답 record
- */
-public record KakaoUserInfo(
+public record KakaoUserInfoResponse(
         Long id,
         @JsonProperty("kakao_account") KakaoAccount kakaoAccount
 ) {

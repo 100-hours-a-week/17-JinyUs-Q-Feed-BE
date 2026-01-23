@@ -4,7 +4,7 @@ import com.ktb.auth.client.KakaoOAuth2Client;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.dto.KakaoAccount;
 import com.ktb.auth.dto.KakaoProfile;
-import com.ktb.auth.dto.KakaoUserInfo;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
 import com.ktb.auth.repository.UserAccountRepository;
@@ -69,7 +69,7 @@ class OAuthIntegrationTest {
         String state = "generated-state";
         String code = "auth-code-123";
         String kakaoAccessToken = "kakao.access.token";
-        KakaoUserInfo userInfo = new KakaoUserInfo(12345L, new KakaoAccount("newuser@example.com", new KakaoProfile("신규유저", null)));
+        KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("newuser@example.com", new KakaoProfile("신규유저", null)));
 
         when(kakaoOAuth2Client.getAccessToken(code)).thenReturn(kakaoAccessToken);
         when(kakaoOAuth2Client.getUserInfo(kakaoAccessToken)).thenReturn(userInfo);
@@ -224,7 +224,7 @@ class OAuthIntegrationTest {
 
     private MvcResult performLogin(String state) throws Exception {
         String code = "auth-code";
-        KakaoUserInfo userInfo = new KakaoUserInfo(12345L, new KakaoAccount("user@example.com", new KakaoProfile("유저", null)));
+        KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("user@example.com", new KakaoProfile("유저", null)));
 
         when(kakaoOAuth2Client.getAccessToken(anyString())).thenReturn("kakao.token");
         when(kakaoOAuth2Client.getUserInfo(anyString())).thenReturn(userInfo);

@@ -1,8 +1,8 @@
 package com.ktb.auth.client;
 
-import com.ktb.auth.dto.KakaoUserInfo;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
+import com.ktb.auth.dto.response.KakaoTokenResponse;
+import com.ktb.auth.exception.oauth.OAuthProviderException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +16,19 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Kakao OAuth2 REST API Client
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class KakaoOAuth2Client {
+
+    private static final String PARAM_GRANT_TYPE = "grant_type";
+    private static final String PARAM_CLIENT_ID = "client_id";
+    private static final String PARAM_CLIENT_SECRET = "client_secret";
+    private static final String PARAM_REDIRECT_URI = "redirect_uri";
+    private static final String PARAM_CODE = "code";
+    private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
+    private static final String ERROR_TOKEN_RESPONSE_EMPTY = "Kakao Access Token을 받지 못했습니다.";
+    private static final String ERROR_USERINFO_RESPONSE_EMPTY = "Kakao 사용자 정보를 받지 못했습니다.";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -41,19 +47,16 @@ public class KakaoOAuth2Client {
     @Value("${spring.security.oauth2.client.provider.kakao.user-info-uri}")
     private String userInfoUri;
 
-    /**
-     * Authorization Code → Access Token
-     */
     public String getAccessToken(String code) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type", "authorization_code");
-        params.add("client_id", clientId);
-        params.add("client_secret", clientSecret);
-        params.add("redirect_uri", redirectUri);
-        params.add("code", code);
+        params.add(PARAM_GRANT_TYPE, GRANT_TYPE_AUTHORIZATION_CODE);
+        params.add(PARAM_CLIENT_ID, clientId);
+        params.add(PARAM_CLIENT_SECRET, clientSecret);
+        params.add(PARAM_REDIRECT_URI, redirectUri);
+        params.add(PARAM_CODE, code);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
@@ -65,46 +68,29 @@ public class KakaoOAuth2Client {
         );
 
         if (response.getBody() == null) {
-            throw new RuntimeException("Kakao Access Token을 받지 못했습니다.");
+            throw new OAuthProviderException(ERROR_TOKEN_RESPONSE_EMPTY);
         }
 
-        return response.getBody().getAccessToken();
+        return response.getBody().access_token();
     }
 
-    /**
-     * Access Token → 사용자 정보
-     */
-    public KakaoUserInfo getUserInfo(String accessToken) {
+    public KakaoUserInfoResponse getUserInfo(String accessToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
-        ResponseEntity<KakaoUserInfo> response = restTemplate.exchange(
+        ResponseEntity<KakaoUserInfoResponse> response = restTemplate.exchange(
                 userInfoUri,
                 HttpMethod.GET,
                 request,
-                KakaoUserInfo.class
+                KakaoUserInfoResponse.class
         );
 
         if (response.getBody() == null) {
-            throw new RuntimeException("Kakao 사용자 정보를 받지 못했습니다.");
+            throw new OAuthProviderException(ERROR_USERINFO_RESPONSE_EMPTY);
         }
 
         return response.getBody();
-    }
-
-    @Getter
-    @NoArgsConstructor
-    private static class KakaoTokenResponse {
-        private String access_token;
-        private String token_type;
-        private String refresh_token;
-        private Integer expires_in;
-        private String scope;
-
-        public String getAccessToken() {
-            return access_token;
-        }
     }
 }
