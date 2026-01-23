@@ -46,16 +46,21 @@ public class AnswerHashtag extends BaseTimeEntity {
     @JoinColumn(name = "tag_id", nullable = false)
     private Hashtag hashtag;
 
+    @Column(name = "keyword_included")
+    private boolean included;
+
     @Builder
-    private AnswerHashtag(Answer answer, Hashtag hashtag) {
+    private AnswerHashtag(Answer answer, Hashtag hashtag, boolean included) {
         this.answer = answer;
         this.hashtag = hashtag;
+        this.included = included;
     }
 
-    public static AnswerHashtag create(Answer answer, Hashtag hashtag) {
+    public static AnswerHashtag create(Answer answer, Hashtag hashtag, boolean included) {
         return AnswerHashtag.builder()
                 .answer(answer)
                 .hashtag(hashtag)
+                .included(included)
                 .build();
     }
 }

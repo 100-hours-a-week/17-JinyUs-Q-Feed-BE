@@ -11,12 +11,13 @@ import org.springframework.stereotype.Repository;
 public interface QuestionHashtagRepository extends JpaRepository<QuestionHashtag, Long> {
 
     @Query("""
-            SELECT DISTINCT h.name
+            SELECT qh
             FROM QuestionHashtag qh
-            JOIN qh.hashtag h
+            INNER JOIN FETCH qh.hashtag h
+                on h.tag_id = qh.tag_id
             WHERE qh.question.id = :questionId
             """)
-    List<String> findKeywordNamesByQuestionId(@Param("questionId") Long questionId);
+    List<QuestionHashtag> findKeywordNamesByQuestionId(@Param("questionId") Long questionId);
 
     boolean existsByQuestion_IdAndHashtag_NameIgnoreCase(Long questionId, String name);
 
