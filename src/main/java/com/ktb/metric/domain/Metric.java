@@ -60,6 +60,11 @@ public class Metric extends BaseUsableEntity {
         this.description = description;
     }
 
+    public void updateName(String name) {
+        validateName(name);
+        this.name = name;
+    }
+
     private void validateName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new MetricRequiredNameException();

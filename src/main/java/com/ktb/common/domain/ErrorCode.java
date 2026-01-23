@@ -58,6 +58,7 @@ public enum ErrorCode {
     METRIC_NAME_REQUIRED(400, "M001", "평가 지표 이름은 필수입니다"),
     METRIC_NAME_TOO_LONG(400, "M002", "평가 지표 이름은 100자를 초과할 수 없습니다"),
     METRIC_SCORE_INVALID_RANGE(400, "M003", "평가 점수는 0-100 사이여야 합니다"),
+    METRIC_NOT_FOUND(404, "M004", "평가 지표를 찾을 수 없습니다"),
 
     // ==================== Search 관련 ====================
     SEARCH_KEYWORD_TOO_SHORT(400, "S001", "검색어는 너무 짧습니다"),
