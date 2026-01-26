@@ -82,6 +82,14 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    public QuestionDetailResponse getDailyRecommendation() {
+        Question question = questionRepository
+                .findFirstByDeletedAtIsNullAndUseYnTrueOrderByIdDesc()
+                .orElseThrow(() -> new QuestionNotFoundException(0L));
+        return toDetailResponse(question);
+    }
+
+    @Override
     @Transactional
     public QuestionDetailResponse createQuestion(QuestionCreateRequest request) {
         Question question = Question.create(request.content(), request.type(), request.category());
