@@ -105,6 +105,21 @@ public class QuestionController {
     }
 
     /**
+     * 오늘의 추천 질문 조회
+     */
+    @GetMapping("/recommendation")
+    @Operation(summary = "오늘의 추천 질문", description = "오늘의 추천 질문을 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "질문 없음",
+                    content = @Content(schema = @Schema(implementation = com.ktb.common.dto.CommonErrorResponse.class)))
+    })
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getDailyRecommendation() {
+        QuestionDetailResponse result = questionService.getDailyRecommendation();
+        return ResponseEntity.ok(new ApiResponse<>("question_recommendation_success", result));
+    }
+
+    /**
      * 질문 생성
      */
     @PostMapping

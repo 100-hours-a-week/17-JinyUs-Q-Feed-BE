@@ -46,4 +46,6 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             @Param("cursor") Long cursor,
             Pageable pageable
     );
+
+    java.util.Optional<Question> findFirstByDeletedAtIsNullAndUseYnTrueOrderByIdDesc();
 }
