@@ -13,8 +13,7 @@ public interface QuestionHashtagRepository extends JpaRepository<QuestionHashtag
     @Query("""
             SELECT qh
             FROM QuestionHashtag qh
-            INNER JOIN FETCH qh.hashtag h
-                on h.tag_id = qh.tag_id
+            JOIN FETCH qh.hashtag h
             WHERE qh.question.id = :questionId
             """)
     List<QuestionHashtag> findKeywordNamesByQuestionId(@Param("questionId") Long questionId);
