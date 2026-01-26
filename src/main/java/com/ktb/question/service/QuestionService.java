@@ -18,6 +18,8 @@ public interface QuestionService {
 
     void deleteQuestion(Long questionId);
 
+    QuestionDetailResponse getDailyRecommendation();
+
     QuestionKeywordListResponse getQuestionKeywords(Long questionId);
 
     QuestionKeywordCheckResponse checkQuestionKeywords(Long questionId, java.util.List<String> keywords);
