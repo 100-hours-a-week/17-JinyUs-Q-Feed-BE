@@ -1,10 +1,10 @@
 package com.ktb.auth.controller;
 
 import com.ktb.auth.dto.AuthorizationUrlResult;
-import com.ktb.auth.dto.LogoutAllResponse;
-import com.ktb.auth.dto.OAuthLoginResponseDto;
+import com.ktb.auth.dto.response.LogoutAllResponse;
+import com.ktb.auth.dto.response.OAuthLoginResponse;
 import com.ktb.auth.dto.OAuthLoginResult;
-import com.ktb.auth.dto.TokenRefreshResponseDto;
+import com.ktb.auth.dto.response.TokenRefreshResponse;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.auth.service.CookieService;
@@ -59,8 +59,7 @@ public class OAuthController implements OAuthApi {
      * GET /api/auth/oauth/{provider}/callback?code=xxx&state=yyy
      */
     @GetMapping("/oauth/{provider}/callback")
-    @Override
-    public ResponseEntity<ApiResponse<OAuthLoginResponseDto>> handleCallback(
+    public ResponseEntity<ApiResponse<OAuthLoginResponse>> handleCallback(
             @PathVariable String provider,
             @RequestParam String code,
             @RequestParam String state,
@@ -82,10 +81,10 @@ public class OAuthController implements OAuthApi {
         response.addCookie(refreshTokenCookie);
 
         // 응답에는 User 정보만 포함 (토큰 정보 제외)
-        OAuthLoginResponseDto responseDto = new OAuthLoginResponseDto(result.user());
+        OAuthLoginResponse responseDto = new OAuthLoginResponse(result.user());
 
         return ResponseEntity.ok(
-                new ApiResponse<OAuthLoginResponseDto>("oauth_login_success", responseDto)
+                new ApiResponse<OAuthLoginResponse>("oauth_login_success", responseDto)
         );
     }
 
@@ -94,8 +93,7 @@ public class OAuthController implements OAuthApi {
      * POST /api/auth/tokens
      */
     @PostMapping("/tokens")
-    @Override
-    public ResponseEntity<ApiResponse<TokenRefreshResponseDto>> refreshTokens(
+    public ResponseEntity<ApiResponse<TokenRefreshResponse>> refreshTokens(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
@@ -114,10 +112,10 @@ public class OAuthController implements OAuthApi {
         response.addCookie(newRefreshTokenCookie);
 
         // 응답에는 expiresIn만 포함 (토큰 정보 제외)
-        TokenRefreshResponseDto responseDto = new TokenRefreshResponseDto(result.expiresIn());
+        TokenRefreshResponse responseDto = new TokenRefreshResponse(result.expiresIn());
 
         return ResponseEntity.ok(
-                new ApiResponse<TokenRefreshResponseDto>("token_refresh_success", responseDto)
+                new ApiResponse<TokenRefreshResponse>("token_refresh_success", responseDto)
         );
     }
 

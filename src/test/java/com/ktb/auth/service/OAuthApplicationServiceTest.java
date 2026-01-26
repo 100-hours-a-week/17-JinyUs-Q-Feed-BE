@@ -2,6 +2,7 @@ package com.ktb.auth.service;
 
 import com.ktb.auth.client.KakaoOAuth2Client;
 import com.ktb.auth.domain.OAuthProvider;
+import com.ktb.auth.exception.oauth.OAuthProviderException;
 import com.ktb.auth.domain.RefreshToken;
 import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.domain.TokenFamily;
@@ -9,7 +10,7 @@ import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.dto.AuthorizationUrlResult;
 import com.ktb.auth.dto.KakaoAccount;
 import com.ktb.auth.dto.KakaoProfile;
-import com.ktb.auth.dto.KakaoUserInfo;
+import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.exception.family.FamilyRevokedException;
@@ -123,7 +124,7 @@ class OAuthApplicationServiceTest {
     @DisplayName("OAuth 콜백 처리 - 신규 사용자 로그인 성공")
     void handleCallback_WithNewUser_ShouldSucceed() {
         // given
-        KakaoUserInfo userInfo = new KakaoUserInfo(12345L, new KakaoAccount("newuser@example.com", new KakaoProfile("신규유저", null)));
+        KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("newuser@example.com", new KakaoProfile("신규유저", null)));
         UserAccount newUser = mock(UserAccount.class);
         when(newUser.getId()).thenReturn(USER_ID);
         when(newUser.getNickname()).thenReturn("신규유저");
@@ -159,7 +160,7 @@ class OAuthApplicationServiceTest {
     @DisplayName("OAuth 콜백 처리 - 기존 사용자 로그인 성공")
     void handleCallback_WithExistingUser_ShouldSucceed() {
         // given
-        KakaoUserInfo userInfo = new KakaoUserInfo(12345L, new KakaoAccount("existing@example.com", new KakaoProfile("기존유저", null)));
+        KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("existing@example.com", new KakaoProfile("기존유저", null)));
         UserAccount existingUser = mock(UserAccount.class);
         when(existingUser.getId()).thenReturn(USER_ID);
         when(existingUser.getNickname()).thenReturn("기존유저");
@@ -206,7 +207,7 @@ class OAuthApplicationServiceTest {
         // given
         doNothing().when(oauthDomainService).validateAndConsumeState(STATE);
         when(kakaoOAuth2Client.getAccessToken(CODE))
-                .thenThrow(new RuntimeException("Kakao API 통신 실패"));
+                .thenThrow(new OAuthProviderException());
 
         // when & then
         assertThatThrownBy(() -> oauthApplicationService.handleCallback(KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP))
