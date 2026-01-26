@@ -49,7 +49,13 @@ public class SecurityConfig {
                                 "/error",
                                 "/actuator/health",
                                 "/api/auth/**",
-                                "/h2-console/**"
+                                "/h2-console/**",
+
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**", // 기본값 (springdoc 내부 일부가 쓰는 경우 대비)
+                                "/v3/api-docs/swagger-config",
+                                "/api-docs/**"
                         ).permitAll()
 
                         // Actuator Admin 전용
