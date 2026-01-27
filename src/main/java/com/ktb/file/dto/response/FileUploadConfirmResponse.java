@@ -9,7 +9,7 @@ public record FileUploadConfirmResponse(
         @Schema(description = "파일 ID", example = "123", requiredMode = Schema.RequiredMode.REQUIRED)
         Long fileId,
 
-        @Schema(description = "파일 URL (CDN)", example = "https://cdn.example.com/uploads/audio/uuid.mp3",
+        @Schema(description = "파일 URL (Presigned GET)", example = "https://s3.amazonaws.com/bucket/uploads/audio/uuid.mp3?X-Amz-Algorithm=...",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         String fileUrl,
 

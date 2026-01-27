@@ -20,8 +20,8 @@ public record PresignedUrlResponse(
         @Schema(description = "URL 만료 시간 (초)", example = "300", requiredMode = Schema.RequiredMode.REQUIRED)
         int expiresIn,
 
-        @JsonProperty("upload_method")
-        @Schema(description = "업로드 HTTP 메서드", example = "PUT", requiredMode = Schema.RequiredMode.REQUIRED)
-        String uploadMethod
+        @JsonProperty("method")
+        @Schema(description = "HTTP 메서드", example = "PUT", requiredMode = Schema.RequiredMode.REQUIRED)
+        String method
 ) {
 }
