@@ -26,8 +26,8 @@ public record AiFeedbackData(
         String questionType,
 
         @JsonProperty("category")
-        @Schema(description = "질문 카테고리", example = "DATABASE",
-                allowableValues = {"DATABASE", "OS", "NETWORK", "COMPUTER_ARCHITECTURE", "ALGORITHM"})
+        @Schema(description = "질문 카테고리", example = "DB",
+                allowableValues = {"OS", "NETWORK", "DB", "COMPUTER_ARCHITECTURE", "ALGORITHM", "DATA_STRUCTURE"})
         String category,
 
         @JsonProperty("metrics")
