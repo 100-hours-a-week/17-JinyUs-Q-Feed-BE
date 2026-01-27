@@ -54,6 +54,8 @@ aws:
   region: ${AWS_REGION:ap-northeast-2}
   s3:
     bucket-name: ${AWS_S3_BUCKET_NAME:qfeed-files}
+    cdn-url-prefix: ${AWS_S3_CDN_URL_PREFIX:https://qfeed-dev-s3-audio.s3.ap-northeast-2.amazonaws.com}
+    key-prefix: ${AWS_S3_KEY_PREFIX:uploads}
   credentials:
     access-key: ${AWS_ACCESS_KEY_ID}
     secret-key: ${AWS_SECRET_ACCESS_KEY}
