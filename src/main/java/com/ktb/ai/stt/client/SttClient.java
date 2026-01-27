@@ -1,7 +1,7 @@
 package com.ktb.ai.stt.client;
 
 import com.ktb.ai.stt.dto.request.SttRequest;
-import com.ktb.ai.stt.dto.response.SttData;
+import com.ktb.ai.stt.dto.response.SttResponse;
 import com.ktb.ai.stt.exception.*;
 import com.ktb.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,7 @@ public class SttClient {
                 url, request.userId(), request.sessionId(), request.audioUrl());
 
         try {
-            ApiResponse<SttData> response = aiRestClient.post()
+            ApiResponse<SttResponse> response = aiRestClient.post()
                     .uri(url)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)

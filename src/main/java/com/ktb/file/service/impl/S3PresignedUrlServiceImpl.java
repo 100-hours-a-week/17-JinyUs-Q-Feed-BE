@@ -5,6 +5,7 @@ import com.ktb.file.domain.FileCategory;
 import com.ktb.file.domain.FileUploadStatus;
 import com.ktb.file.domain.StorageType;
 import com.ktb.file.dto.request.PresignedUrlRequest;
+import com.ktb.file.dto.request.PresignedUrlMethod;
 import com.ktb.file.dto.response.FileUploadConfirmResponse;
 import com.ktb.file.dto.response.PresignedUrlResponse;
 import com.ktb.file.exception.FileInvalidMetadataException;
@@ -21,9 +22,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -39,7 +43,6 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     private static final String UPLOAD_METHOD = "PUT";
     private static final String ERROR_MESSAGE_EXTENSION_NOT_FOUND = "파일 확장자를 찾을 수 없습니다";
     private static final String ERROR_MESSAGE_FILE_NOT_UPLOADED = "S3에 파일이 업로드되지 않았습니다";
-    private static final String CDN_URL_PREFIX = "https://cdn.example.com"; // TODO: 실제 CDN URL로 변경
 
     private final FileRepository fileRepository;
     private final S3Client s3Client;
@@ -48,40 +51,20 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
+    @Value("${aws.s3.cdn-url-prefix}")
+    private String cdnUrlPrefix;
+
+    @Value("${aws.s3.key-prefix:uploads}")
+    private String keyPrefix;
+
     @Override
     @Transactional
     public PresignedUrlResponse generatePresignedUrl(PresignedUrlRequest request) {
-        validateMetadata(request);
-
-        String extension = extractExtension(request.fileName());
-        String storedName = generateStoredName(extension);
-        String s3Key = buildS3Key(request.category(), storedName);
-
-        File fileEntity = File.builder()
-                .originalName(request.fileName())
-                .storedName(storedName)
-                .path(s3Key)
-                .extension(extension)
-                .size(request.fileSize())
-                .mimeType(request.mimeType())
-                .storageType(StorageType.S3)
-                .category(request.category())
-                .uploadStatus(FileUploadStatus.PENDING)
-                .build();
-
-        File savedFile = fileRepository.save(fileEntity);
-
-        String presignedUrl = generateS3PresignedUrl(s3Key, request.mimeType());
-
-        log.info("Presigned URL generated - File ID: {}, S3 Key: {}, Category: {}, Expires in: {}s",
-                savedFile.getId(), s3Key, request.category(), PRESIGNED_URL_EXPIRATION_SECONDS);
-
-        return new PresignedUrlResponse(
-                savedFile.getId(),
-                presignedUrl,
-                PRESIGNED_URL_EXPIRATION_SECONDS,
-                UPLOAD_METHOD
-        );
+        PresignedUrlMethod method = resolveMethod(request);
+        if (method == PresignedUrlMethod.PUT) {
+            return generateUploadPresignedUrl(request);
+        }
+        return generateReadPresignedUrl(request, method);
     }
 
     @Override
@@ -101,9 +84,11 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
 
             log.info("Upload confirmed - File ID: {}, CDN URL: {}", file.getId(), cdnUrl);
 
+            // 업로드 확인 응답은 조회용 Presigned GET URL을 반환
+            String presignedUrl = generateS3PresignedGetUrl(file.getPath());
             return new FileUploadConfirmResponse(
                     file.getId(),
-                    cdnUrl,
+                    presignedUrl,
                     FileUploadStatus.UPLOADED
             );
         } else {
@@ -147,6 +132,23 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
         return presignedRequest.url().toString();
     }
 
+    private String generateS3PresignedGetUrl(String s3Key) {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3Key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofSeconds(PRESIGNED_URL_EXPIRATION_SECONDS))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+        return presignedRequest.url().toString();
+    }
+
+
     private void validateMetadata(PresignedUrlRequest request) {
         FileCategory category = request.category();
 
@@ -180,10 +182,80 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     }
 
     private String buildS3Key(FileCategory category, String storedName) {
-        return "uploads/" + category.name().toLowerCase() + "/" + storedName;
+        return normalizeKeyPrefix() + "/" + category.name().toLowerCase() + "/" + storedName;
     }
 
     private String buildCdnUrl(String s3Key) {
-        return CDN_URL_PREFIX + "/" + s3Key;
+        return normalizeCdnPrefix() + "/" + s3Key;
+    }
+
+    private PresignedUrlResponse generateUploadPresignedUrl(PresignedUrlRequest request) {
+        validateMetadata(request);
+
+        String extension = extractExtension(request.fileName());
+        String storedName = generateStoredName(extension);
+        String s3Key = buildS3Key(request.category(), storedName);
+
+        File fileEntity = File.builder()
+                .originalName(request.fileName())
+                .storedName(storedName)
+                .path(s3Key)
+                .extension(extension)
+                .size(request.fileSize())
+                .mimeType(request.mimeType())
+                .storageType(StorageType.S3)
+                .category(request.category())
+                .uploadStatus(FileUploadStatus.PENDING)
+                .build();
+
+        File savedFile = fileRepository.save(fileEntity);
+
+        String presignedUrl = generateS3PresignedUrl(s3Key, request.mimeType());
+
+        log.info("Presigned URL generated - File ID: {}, S3 Key: {}, Category: {}, Expires in: {}s",
+                savedFile.getId(), s3Key, request.category(), PRESIGNED_URL_EXPIRATION_SECONDS);
+
+        return new PresignedUrlResponse(
+                savedFile.getId(),
+                presignedUrl,
+                PRESIGNED_URL_EXPIRATION_SECONDS,
+                UPLOAD_METHOD
+        );
+    }
+
+    private PresignedUrlResponse generateReadPresignedUrl(PresignedUrlRequest request, PresignedUrlMethod method) {
+        if (request.fileId() == null) {
+            throw new FileInvalidMetadataException("file_id는 GET/HEAD 요청에서 필수입니다");
+        }
+
+        File file = fileRepository.findById(request.fileId())
+                .orElseThrow(() -> new FileNotFoundException(request.fileId()));
+
+        String presignedUrl = generateS3PresignedGetUrl(file.getPath());
+
+        log.info("Presigned URL generated - File ID: {}, S3 Key: {}, Method: {}, Expires in: {}s",
+                file.getId(), file.getPath(), method, PRESIGNED_URL_EXPIRATION_SECONDS);
+
+        return new PresignedUrlResponse(
+                file.getId(),
+                presignedUrl,
+                PRESIGNED_URL_EXPIRATION_SECONDS,
+                method.name()
+        );
+    }
+
+    private PresignedUrlMethod resolveMethod(PresignedUrlRequest request) {
+        return request.method() != null ? request.method() : PresignedUrlMethod.PUT;
+    }
+
+    private String normalizeKeyPrefix() {
+        if (keyPrefix == null || keyPrefix.trim().isEmpty()) {
+            return "uploads";
+        }
+        return keyPrefix.endsWith("/") ? keyPrefix.substring(0, keyPrefix.length() - 1) : keyPrefix;
+    }
+
+    private String normalizeCdnPrefix() {
+        return cdnUrlPrefix.endsWith("/") ? cdnUrlPrefix.substring(0, cdnUrlPrefix.length() - 1) : cdnUrlPrefix;
     }
 }
