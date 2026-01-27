@@ -19,7 +19,7 @@ public record AnswerListRequest(
         AnswerType type,
 
         @Parameter(description = "질문 카테고리 필터", example = "OS")
-        @Schema(description = "질문 카테고리 (OS, NETWORK, DB, DATA_STRUCTURE, ALGORITHM)", example = "OS")
+        @Schema(description = "질문 카테고리 (OS, NETWORK, DB, COMPUTER_ARCHITECTURE, ALGORITHM, DATA_STRUCTURE)", example = "OS")
         QuestionCategory category,
 
         @Parameter(description = "조회 시작 날짜 (YYYY-MM-DD)", example = "2026-01-01")
