@@ -1,12 +1,16 @@
 package com.ktb.auth.service.impl;
 
 import com.ktb.auth.client.KakaoOAuth2Client;
+import com.ktb.auth.config.KakaoOAuthProviderProperties;
+import com.ktb.auth.config.KakaoOAuthRegistrationProperties;
 import com.ktb.auth.domain.OAuthProvider;
 import com.ktb.auth.domain.RefreshToken;
 import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.domain.TokenFamily;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.dto.AuthorizationUrlResult;
+import com.ktb.auth.dto.OAuthExchangeCodeResult;
+import com.ktb.auth.dto.OAuthExchangePayload;
 import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
@@ -26,21 +30,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * OAuth Application Service 구현체
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
-@Transactional(readOnly = true)
 public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
-    private static final int ACCESS_TOKEN_EXPIRES_SECONDS = 600;
-    private static final int REFRESH_TOKEN_EXPIRES_DAYS = 14;
     private static final String SUPPORTED_PROVIDER_KAKAO = "kakao";
     private static final String DEFAULT_ROLE = "ROLE_USER";
     private static final List<String> DEFAULT_ROLES = List.of(DEFAULT_ROLE);
@@ -52,18 +49,8 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenFamilyRepository tokenFamilyRepository;
-
-    @Value("${spring.security.oauth2.client.provider.kakao.authorization-uri}")
-    private String kakaoAuthorizationUri;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
-    private String kakaoClientId;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
-    private String kakaoRedirectUri;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.scope}")
-    private List<String> kakaoScopes;
+    private final KakaoOAuthProviderProperties kakaoProviderProperties;
+    private final KakaoOAuthRegistrationProperties kakaoRegistrationProperties;
 
     @Override
     public AuthorizationUrlResult getAuthorizationUrl(String provider) {
@@ -71,18 +58,16 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
             throw new UnsupportedProviderException(provider);
         }
 
-        // State 생성
         String state = oauthDomainService.generateAndStoreState(provider);
 
-        // Scope 문자열 생성
-        String scopeParam = String.join(",", kakaoScopes);
+        List<String> scopes = kakaoRegistrationProperties.getScope();
+        String scopeParam = String.join(",", scopes == null ? List.of() : scopes);
 
-        // Kakao 인증 URL 생성
         String redirectUrl = String.format(
                 "%s?client_id=%s&redirect_uri=%s&response_type=code&state=%s&scope=%s",
-                kakaoAuthorizationUri,
-                kakaoClientId,
-                kakaoRedirectUri,
+                kakaoProviderProperties.getAuthorizationUri(),
+                kakaoRegistrationProperties.getClientId(),
+                kakaoRegistrationProperties.getRedirectUri(),
                 state,
                 scopeParam
         );
@@ -92,22 +77,18 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
     @Override
     @Transactional
-    public OAuthLoginResult handleCallback(String provider, String code, String state, String deviceInfo, String clientIp) {
-        if (!"kakao".equalsIgnoreCase(provider)) {
+    public OAuthExchangeCodeResult handleCallback(String provider, String code, String state, String deviceInfo, String clientIp) {
+        if (!SUPPORTED_PROVIDER_KAKAO.equalsIgnoreCase(provider)) {
             throw new UnsupportedProviderException(provider);
         }
 
-        // 1. State 검증
         oauthDomainService.validateAndConsumeState(state);
 
         try {
-            // 2. Authorization Code → Access Token
             String kakaoAccessToken = kakaoOAuth2Client.getAccessToken(code);
 
-            // 3. Access Token → 사용자 정보
             KakaoUserInfoResponse userInfo = kakaoOAuth2Client.getUserInfo(kakaoAccessToken);
 
-            // 4. UserAccount 조회 or 생성 (email 매핑)
             UserAccount account = oauthDomainService.findOrCreateAccount(
                     OAuthProvider.KAKAO,
                     userInfo.getProviderId(),
@@ -116,37 +97,50 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
             boolean isNewUser = account.getLastLoginAt() == null;
 
-            // 5. 로그인 시각 갱신
             account.updateLastLogin();
 
-            // 6. TokenFamily 생성
-            TokenFamily family = rtrService.createFamily(account.getId(), deviceInfo, clientIp);
-
-            // 7. JWT 발급
-            String accessToken = tokenService.issueAccessToken(account.getId(), DEFAULT_ROLES);
-            String refreshToken = jwtProvider.createRefreshToken(account.getId(), family.getUuid());
-
-            // 8. RefreshToken DB 저장
-            String tokenHash = jwtProvider.generateTokenHash(refreshToken);
-            RefreshToken refreshTokenEntity = RefreshToken.builder()
-                    .family(family)
-                    .tokenHash(tokenHash)
-                    .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRES_DAYS))
-                    .build();
-            refreshTokenRepository.save(refreshTokenEntity);
+            OAuthExchangePayload payload = new OAuthExchangePayload(
+                    account.getId(),
+                    account.getNickname(),
+                    isNewUser,
+                    deviceInfo,
+                    clientIp
+            );
+            String exchangeCode = oauthDomainService.generateAndStoreExchangeCode(payload);
 
             log.info("OAuth 로그인 성공: accountId={}, isNewUser={}", account.getId(), isNewUser);
 
-            return new OAuthLoginResult(
-                    accessToken,
-                    refreshToken,
-                    new UserInfo(account.getNickname(), isNewUser)
-            );
+            return new OAuthExchangeCodeResult(exchangeCode);
 
         } catch (Exception e) {
             log.error("OAuth 로그인 실패: provider={}, error={}", provider, e.getMessage(), e);
             throw new OAuthProviderException();
         }
+    }
+
+    @Override
+    @Transactional
+    public OAuthLoginResult exchange(String exchangeCode) {
+        OAuthExchangePayload payload = oauthDomainService.consumeExchangeCode(exchangeCode);
+
+        TokenFamily family = rtrService.createFamily(payload.accountId(), payload.deviceInfo(), payload.clientIp());
+
+        String accessToken = tokenService.issueAccessToken(payload.accountId(), DEFAULT_ROLES);
+        String refreshToken = jwtProvider.createRefreshToken(payload.accountId(), family.getUuid());
+
+        String tokenHash = jwtProvider.generateTokenHash(refreshToken);
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .family(family)
+                .tokenHash(tokenHash)
+                .expiresAt(LocalDateTime.now().plus(jwtProvider.refreshTokenDuration()))
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        return new OAuthLoginResult(
+                accessToken,
+                refreshToken,
+                new UserInfo(payload.nickname(), payload.isNewUser())
+        );
     }
 
     @Override
@@ -182,7 +176,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
         RefreshToken newTokenEntity = RefreshToken.builder()
                 .family(family)
                 .tokenHash(newTokenHash)
-                .expiresAt(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRES_DAYS))
+                .expiresAt(LocalDateTime.now().plus(jwtProvider.refreshTokenDuration()))
                 .build();
         refreshTokenRepository.save(newTokenEntity);
 
@@ -190,7 +184,7 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
 
         log.info("Token Refresh 성공: userId={}, familyUuid={}", claims.userId(), claims.familyUuid());
 
-        return new TokenRefreshResult(newAccessToken, newRefreshToken, ACCESS_TOKEN_EXPIRES_SECONDS);
+        return new TokenRefreshResult(newAccessToken, newRefreshToken, jwtProvider.accessTokenExpiresSeconds());
     }
 
     @Override
@@ -220,5 +214,4 @@ public class OAuthApplicationServiceImpl implements OAuthApplicationService {
         log.info("전체 로그아웃 성공: accountId={}, revokedCount={}", accountId, count);
         return count;
     }
-
 }

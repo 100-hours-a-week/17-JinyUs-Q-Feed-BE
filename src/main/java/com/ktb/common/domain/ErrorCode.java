@@ -14,6 +14,7 @@ public enum ErrorCode {
     OAUTH_PROVIDER_ERROR(422, "AUTH004", "OAuth 제공자 통신에 실패했습니다"),
     OAUTH_CONNECTION_NOT_FOUND(404, "AUTH005", "OAuth 연동 정보를 찾을 수 없습니다"),
     OAUTH_ALREADY_UNLINKED(409, "AUTH006", "이미 연동 해제된 OAuth입니다"),
+    INVALID_EXCHANGE_CODE(401, "AUTH007", "교환 코드가 유효하지 않습니다"),
 
     // ==================== Token 관련 ====================
     INVALID_ACCESS_TOKEN(401, "AUTH011", "Access Token이 유효하지 않습니다"),
