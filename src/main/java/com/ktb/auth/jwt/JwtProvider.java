@@ -15,9 +15,11 @@ import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,6 +155,22 @@ public class JwtProvider {
         } catch (JwtException e) {
             throw new InvalidRefreshTokenException("Refresh Token 파싱에 실패했습니다");
         }
+    }
+
+    public int accessTokenExpiresSeconds() {
+        Long expiresMs = jwtProperties.getAccessTokenExpiration();
+        if (expiresMs == null) {
+            return 0;
+        }
+        return (int) TimeUnit.MILLISECONDS.toSeconds(expiresMs);
+    }
+
+    public Duration refreshTokenDuration() {
+        Long expiresMs = jwtProperties.getRefreshTokenExpiration();
+        if (expiresMs == null) {
+            return Duration.ZERO;
+        }
+        return Duration.ofMillis(expiresMs);
     }
 
     /**

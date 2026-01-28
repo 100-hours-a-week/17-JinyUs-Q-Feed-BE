@@ -1,6 +1,8 @@
 package com.ktb.auth.service;
 
 import com.ktb.auth.client.KakaoOAuth2Client;
+import com.ktb.auth.config.KakaoOAuthProviderProperties;
+import com.ktb.auth.config.KakaoOAuthRegistrationProperties;
 import com.ktb.auth.domain.OAuthProvider;
 import com.ktb.auth.exception.oauth.OAuthProviderException;
 import com.ktb.auth.domain.RefreshToken;
@@ -10,13 +12,17 @@ import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.dto.AuthorizationUrlResult;
 import com.ktb.auth.dto.KakaoAccount;
 import com.ktb.auth.dto.KakaoProfile;
+import com.ktb.auth.dto.OAuthExchangeCodeResult;
+import com.ktb.auth.dto.OAuthExchangePayload;
 import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.exception.family.FamilyRevokedException;
+import com.ktb.auth.exception.oauth.InvalidExchangeCodeException;
 import com.ktb.auth.exception.oauth.InvalidStateException;
 import com.ktb.auth.exception.token.TokenReuseDetectedException;
 import com.ktb.auth.jwt.JwtProvider;
+import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
 import com.ktb.auth.service.impl.OAuthApplicationServiceImpl;
@@ -29,7 +35,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -62,10 +67,19 @@ class OAuthApplicationServiceTest {
     private JwtProvider jwtProvider;
 
     @Mock
+    private JwtProperties jwtProperties;
+
+    @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
     @Mock
     private TokenFamilyRepository tokenFamilyRepository;
+
+    @Mock
+    private KakaoOAuthProviderProperties kakaoProviderProperties;
+
+    @Mock
+    private KakaoOAuthRegistrationProperties kakaoRegistrationProperties;
 
     @InjectMocks
     private OAuthApplicationServiceImpl oauthApplicationService;
@@ -83,14 +97,16 @@ class OAuthApplicationServiceTest {
     private static final String FAMILY_UUID = "family-uuid-123";
     private static final Long USER_ID = 1L;
     private static final Long FAMILY_ID = 10L;
+    private static final String EXCHANGE_CODE = "exchange-code-123";
 
     @BeforeEach
     void setUp() {
-        // ReflectionTestUtils를 사용하여 @Value 필드 설정
-        ReflectionTestUtils.setField(oauthApplicationService, "kakaoAuthorizationUri", "https://kauth.kakao.com/oauth/authorize");
-        ReflectionTestUtils.setField(oauthApplicationService, "kakaoClientId", "test-client-id");
-        ReflectionTestUtils.setField(oauthApplicationService, "kakaoRedirectUri", "http://localhost:8080/login/oauth2/code/kakao");
-        ReflectionTestUtils.setField(oauthApplicationService, "kakaoScopes", List.of("profile_nickname", "profile_image", "account_email"));
+        when(kakaoProviderProperties.getAuthorizationUri()).thenReturn("https://kauth.kakao.com/oauth/authorize");
+        when(kakaoRegistrationProperties.getClientId()).thenReturn("test-client-id");
+        when(kakaoRegistrationProperties.getRedirectUri()).thenReturn("http://localhost:8080/login/oauth2/code/kakao");
+        when(kakaoRegistrationProperties.getScope()).thenReturn(List.of("profile_nickname", "profile_image", "account_email"));
+        when(jwtProperties.getAccessTokenExpiration()).thenReturn(600000L);
+        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(1209600000L);
     }
 
     @Test
@@ -121,7 +137,7 @@ class OAuthApplicationServiceTest {
     }
 
     @Test
-    @DisplayName("OAuth 콜백 처리 - 신규 사용자 로그인 성공")
+    @DisplayName("OAuth 콜백 처리 - 신규 사용자 교환 코드 발급 성공")
     void handleCallback_WithNewUser_ShouldSucceed() {
         // given
         KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("newuser@example.com", new KakaoProfile("신규유저", null)));
@@ -130,34 +146,35 @@ class OAuthApplicationServiceTest {
         when(newUser.getNickname()).thenReturn("신규유저");
         when(newUser.getLastLoginAt()).thenReturn(null); // 신규 사용자
 
-        TokenFamily mockFamily = mock(TokenFamily.class);
-        when(mockFamily.getUuid()).thenReturn(FAMILY_UUID);
-
         doNothing().when(oauthDomainService).validateAndConsumeState(STATE);
         when(kakaoOAuth2Client.getAccessToken(CODE)).thenReturn(KAKAO_ACCESS_TOKEN);
         when(kakaoOAuth2Client.getUserInfo(KAKAO_ACCESS_TOKEN)).thenReturn(userInfo);
         when(oauthDomainService.findOrCreateAccount(OAuthProvider.KAKAO, "12345", userInfo)).thenReturn(newUser);
-        when(rtrService.createFamily(USER_ID, DEVICE_INFO, CLIENT_IP)).thenReturn(mockFamily);
-        when(tokenService.issueAccessToken(USER_ID, List.of("ROLE_USER"))).thenReturn(ACCESS_TOKEN);
-        when(jwtProvider.createRefreshToken(USER_ID, FAMILY_UUID)).thenReturn(REFRESH_TOKEN);
-        when(jwtProvider.generateTokenHash(REFRESH_TOKEN)).thenReturn(TOKEN_HASH);
+        when(oauthDomainService.generateAndStoreExchangeCode(any(OAuthExchangePayload.class))).thenReturn(EXCHANGE_CODE);
 
         // when
-        OAuthLoginResult result = oauthApplicationService.handleCallback(KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP);
+        OAuthExchangeCodeResult result = oauthApplicationService.handleCallback(
+                KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP
+        );
 
         // then
-        assertThat(result.accessToken()).isEqualTo(ACCESS_TOKEN);
-        assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
-        assertThat(result.user().nickname()).isEqualTo("신규유저");
-        assertThat(result.user().isNewUser()).isTrue();
+        assertThat(result.exchangeCode()).isEqualTo(EXCHANGE_CODE);
 
         verify(oauthDomainService).validateAndConsumeState(STATE);
         verify(newUser).updateLastLogin();
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(oauthDomainService).generateAndStoreExchangeCode(
+                argThat(payload ->
+                        payload.accountId().equals(USER_ID)
+                                && payload.nickname().equals("신규유저")
+                                && payload.isNewUser()
+                                && payload.deviceInfo().equals(DEVICE_INFO)
+                                && payload.clientIp().equals(CLIENT_IP)
+                )
+        );
     }
 
     @Test
-    @DisplayName("OAuth 콜백 처리 - 기존 사용자 로그인 성공")
+    @DisplayName("OAuth 콜백 처리 - 기존 사용자 교환 코드 발급 성공")
     void handleCallback_WithExistingUser_ShouldSucceed() {
         // given
         KakaoUserInfoResponse userInfo = new KakaoUserInfoResponse(12345L, new KakaoAccount("existing@example.com", new KakaoProfile("기존유저", null)));
@@ -166,23 +183,19 @@ class OAuthApplicationServiceTest {
         when(existingUser.getNickname()).thenReturn("기존유저");
         when(existingUser.getLastLoginAt()).thenReturn(LocalDateTime.now().minusDays(1)); // 기존 사용자
 
-        TokenFamily mockFamily = mock(TokenFamily.class);
-        when(mockFamily.getUuid()).thenReturn(FAMILY_UUID);
-
         doNothing().when(oauthDomainService).validateAndConsumeState(STATE);
         when(kakaoOAuth2Client.getAccessToken(CODE)).thenReturn(KAKAO_ACCESS_TOKEN);
         when(kakaoOAuth2Client.getUserInfo(KAKAO_ACCESS_TOKEN)).thenReturn(userInfo);
         when(oauthDomainService.findOrCreateAccount(OAuthProvider.KAKAO, "12345", userInfo)).thenReturn(existingUser);
-        when(rtrService.createFamily(USER_ID, DEVICE_INFO, CLIENT_IP)).thenReturn(mockFamily);
-        when(tokenService.issueAccessToken(USER_ID, List.of("ROLE_USER"))).thenReturn(ACCESS_TOKEN);
-        when(jwtProvider.createRefreshToken(USER_ID, FAMILY_UUID)).thenReturn(REFRESH_TOKEN);
-        when(jwtProvider.generateTokenHash(REFRESH_TOKEN)).thenReturn(TOKEN_HASH);
+        when(oauthDomainService.generateAndStoreExchangeCode(any(OAuthExchangePayload.class))).thenReturn(EXCHANGE_CODE);
 
         // when
-        OAuthLoginResult result = oauthApplicationService.handleCallback(KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP);
+        OAuthExchangeCodeResult result = oauthApplicationService.handleCallback(
+                KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP
+        );
 
         // then
-        assertThat(result.user().isNewUser()).isFalse();
+        assertThat(result.exchangeCode()).isEqualTo(EXCHANGE_CODE);
         verify(existingUser).updateLastLogin();
     }
 
@@ -213,6 +226,45 @@ class OAuthApplicationServiceTest {
         assertThatThrownBy(() -> oauthApplicationService.handleCallback(KAKAO_PROVIDER, CODE, STATE, DEVICE_INFO, CLIENT_IP))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("OAuth 제공자 통신에 실패했습니다");
+    }
+
+    @Test
+    @DisplayName("교환 코드로 토큰 발급 성공")
+    void exchange_WithValidCode_ShouldSucceed() {
+        // given
+        OAuthExchangePayload payload = new OAuthExchangePayload(USER_ID, "신규유저", true, DEVICE_INFO, CLIENT_IP);
+        TokenFamily mockFamily = mock(TokenFamily.class);
+        when(mockFamily.getUuid()).thenReturn(FAMILY_UUID);
+
+        when(oauthDomainService.consumeExchangeCode(EXCHANGE_CODE)).thenReturn(payload);
+        when(rtrService.createFamily(USER_ID, DEVICE_INFO, CLIENT_IP)).thenReturn(mockFamily);
+        when(tokenService.issueAccessToken(USER_ID, List.of("ROLE_USER"))).thenReturn(ACCESS_TOKEN);
+        when(jwtProvider.createRefreshToken(USER_ID, FAMILY_UUID)).thenReturn(REFRESH_TOKEN);
+        when(jwtProvider.generateTokenHash(REFRESH_TOKEN)).thenReturn(TOKEN_HASH);
+
+        // when
+        OAuthLoginResult result = oauthApplicationService.exchange(EXCHANGE_CODE);
+
+        // then
+        assertThat(result.accessToken()).isEqualTo(ACCESS_TOKEN);
+        assertThat(result.refreshToken()).isEqualTo(REFRESH_TOKEN);
+        assertThat(result.user().nickname()).isEqualTo("신규유저");
+        assertThat(result.user().isNewUser()).isTrue();
+        verify(refreshTokenRepository).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("[Edge Case] 만료되거나 잘못된 교환 코드면 예외가 발생해야 한다")
+    void exchange_WithInvalidCode_ShouldThrowException() {
+        // given
+        when(oauthDomainService.consumeExchangeCode("invalid-code")).thenThrow(new InvalidExchangeCodeException());
+
+        // when & then
+        assertThatThrownBy(() -> oauthApplicationService.exchange("invalid-code"))
+                .isInstanceOf(InvalidExchangeCodeException.class)
+                .hasMessageContaining(ErrorCode.INVALID_EXCHANGE_CODE.getMessage());
+
+        verify(rtrService, never()).createFamily(any(), any(), any());
     }
 
     @Test
