@@ -2,7 +2,7 @@ package com.ktb.ai.feedback.service.impl;
 
 import com.ktb.ai.feedback.client.AiFeedbackClient;
 import com.ktb.ai.feedback.dto.request.AiFeedbackRequest;
-import com.ktb.ai.feedback.dto.response.AiFeedbackData;
+import com.ktb.ai.feedback.dto.response.AiFeedbackResponse;
 import com.ktb.ai.feedback.service.AiFeedbackService;
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.common.dto.ApiResponse;
@@ -20,7 +20,7 @@ public class AiFeedbackServiceImpl implements AiFeedbackService {
     private final AiFeedbackClient aiFeedbackClient;
 
     @Override
-    public ApiResponse<AiFeedbackData> evaluateSync(
+    public ApiResponse<AiFeedbackResponse> evaluateSync(
             Long userId,
             Long questionId,
             QuestionType type,
@@ -32,20 +32,22 @@ public class AiFeedbackServiceImpl implements AiFeedbackService {
         log.debug("Evaluating AI feedback - userId: {}, questionId: {}, type: {}, category: {}",
                 userId, questionId, type, category);
 
+        String categoryName = category != null ? category.name() : null;
         AiFeedbackRequest request = new AiFeedbackRequest(
                 userId,
                 questionId,
                 type.name(),
-                category.name(),
+                categoryName,
                 answerType.name(),
                 questionContent,
                 answerContent
         );
 
-        ApiResponse<AiFeedbackData> response = aiFeedbackClient.evaluate(request);
+        ApiResponse<AiFeedbackResponse> response = aiFeedbackClient.evaluate(request);
 
         log.info("AI feedback evaluation completed - userId: {}, questionId: {}", userId, questionId);
 
         return response;
     }
+
 }

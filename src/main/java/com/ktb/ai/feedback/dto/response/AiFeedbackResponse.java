@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Schema(description = "AI 피드백 데이터")
-public record AiFeedbackData(
+@Schema(description = "AI 피드백 응답")
+public record AiFeedbackResponse(
 
         @JsonProperty("user_id")
         @Schema(description = "사용자 ID", example = "101")
@@ -43,6 +43,7 @@ public record AiFeedbackData(
         Boolean weakness,
 
         @JsonProperty("feedback")
+        // bad case 응답에서는 metrics/weakness/feedback이 null입니다.
         @Schema(description = "종합 피드백 (정상 케이스만)")
         AiFeedbackFeedback feedback
 ) {
