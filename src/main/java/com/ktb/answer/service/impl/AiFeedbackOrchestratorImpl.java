@@ -1,7 +1,7 @@
 package com.ktb.answer.service.impl;
 
 import com.ktb.ai.feedback.dto.response.AiFeedbackBadCaseFeedback;
-import com.ktb.ai.feedback.dto.response.AiFeedbackData;
+import com.ktb.ai.feedback.dto.response.AiFeedbackResponse;
 import com.ktb.ai.feedback.dto.response.AiFeedbackFeedback;
 import com.ktb.ai.feedback.dto.response.AiFeedbackMetric;
 import com.ktb.ai.feedback.dto.response.BadCaseType;
@@ -21,6 +21,7 @@ import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
     private final AiFeedbackService aiFeedbackService;
 
     @Override
+    @Transactional
     public FeedbackResponse getFeedbackSync(Long answerId, Long accountId) {
         log.info("Getting AI feedback synchronously for answerId: {}", answerId);
 
@@ -48,11 +50,11 @@ public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
         log.debug("Answer found - answerId: {}, questionId: {}, userId: {}",
                 answerId, question.getId(), account.getId());
 
-        ApiResponse<AiFeedbackData> apiResponse = getAiFeedback(account, question, answer);
+        ApiResponse<AiFeedbackResponse> apiResponse = getAiFeedback(account, question, answer);
 
         FeedbackResponse response = isBadCase(apiResponse)
-                ? handleBadCaseResponse(answerId, apiResponse)
-                : handleSuccessResponse(apiResponse);
+                ? handleBadCaseResponse(answer, apiResponse)
+                : handleSuccessResponse(answer, apiResponse);
 
         log.info("AI feedback retrieved successfully for answerId: {}", answerId);
 
@@ -109,7 +111,7 @@ public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
         throw new UnsupportedOperationException("Feedback retry not yet implemented");
     }
 
-    private ApiResponse<AiFeedbackData> getAiFeedback(
+    private ApiResponse<AiFeedbackResponse> getAiFeedback(
         UserAccount account, Question question, Answer answer
         ) {
 
@@ -124,26 +126,33 @@ public class AiFeedbackOrchestratorImpl implements AiFeedbackOrchestrator {
         );
     }
 
-    private boolean isBadCase(ApiResponse<AiFeedbackData> response) {
+    private boolean isBadCase(ApiResponse<AiFeedbackResponse> response) {
         return "bad_case_detected".equalsIgnoreCase(response.message());
     }
 
-    private FeedbackResponse handleBadCaseResponse(Long answerId, ApiResponse<AiFeedbackData> apiResponse) {
+    private FeedbackResponse handleBadCaseResponse(Answer answer, ApiResponse<AiFeedbackResponse> apiResponse) {
         AiFeedbackBadCaseFeedback badCase = apiResponse.data().badCaseFeedback();
         BadCaseType badCaseType = badCase.getTypeEnum();
 
         String failureMessage = badCaseType.getMessage() + "\n\n" + badCaseType.getGuidance();
 
-        log.warn("Bad case detected for answerId: {}, type: {}", answerId, badCaseType);
+//        answer.transitionTo(AnswerStatus.COMPLETED);
+        answer.setAiFeedback(badCaseType.getGuidance());
+        answerRepository.save(answer);
+
+        log.warn("Bad case detected for answerId: {}, type: {}", answer.getId(), badCaseType);
 
         return FeedbackResponse.failed(failureMessage);
     }
 
-    private FeedbackResponse handleSuccessResponse(ApiResponse<AiFeedbackData> apiResponse) {
-        AiFeedbackData data = apiResponse.data();
+    private FeedbackResponse handleSuccessResponse(Answer answer, ApiResponse<AiFeedbackResponse> apiResponse) {
+        AiFeedbackResponse data = apiResponse.data();
 
         List<FeedbackResponse.RadarChartMetric> radarChart = convertToRadarChart(data.metrics());
         String combinedFeedback = combineFeedback(data.feedback());
+
+        answer.setAiFeedback(combinedFeedback);
+        answerRepository.save(answer);
 
         return FeedbackResponse.completed(combinedFeedback, radarChart);
     }

@@ -1,6 +1,6 @@
 package com.ktb.ai.feedback.service;
 
-import com.ktb.ai.feedback.dto.response.AiFeedbackData;
+import com.ktb.ai.feedback.dto.response.AiFeedbackResponse;
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.common.dto.ApiResponse;
 import com.ktb.question.domain.QuestionCategory;
@@ -21,7 +21,7 @@ public interface AiFeedbackService {
      * @return AI 피드백 응답
      * @throws com.ktb.ai.feedback.exception.AiFeedbackServiceException FastAPI 서버 호출 실패 시
      */
-    ApiResponse<AiFeedbackData> evaluateSync(
+    ApiResponse<AiFeedbackResponse> evaluateSync(
             Long userId,
             Long questionId,
             QuestionType type,
@@ -30,4 +30,5 @@ public interface AiFeedbackService {
             String questionContent,
             String answerContent
     );
+
 }
