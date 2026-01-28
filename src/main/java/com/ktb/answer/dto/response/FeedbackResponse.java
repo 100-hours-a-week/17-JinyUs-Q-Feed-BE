@@ -66,7 +66,7 @@ public record FeedbackResponse(
 
     public static FeedbackResponse failed(String reason) {
         return new FeedbackResponse(
-                STATUS_FAILED,
+                STATUS_COMPLETED,
                 reason,
                 null,
                 null

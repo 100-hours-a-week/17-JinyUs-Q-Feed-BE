@@ -5,7 +5,7 @@ import static com.ktb.common.domain.ErrorCode.AI_FEEDBACK_SERVICE_ERROR;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ktb.ai.feedback.dto.request.AiFeedbackRequest;
-import com.ktb.ai.feedback.dto.response.AiFeedbackData;
+import com.ktb.ai.feedback.dto.response.AiFeedbackResponse;
 import com.ktb.common.dto.ApiResponse;
 import org.springframework.core.ParameterizedTypeReference;
 import com.ktb.ai.feedback.exception.AiFeedbackAlreadyInProgressException;
@@ -47,14 +47,15 @@ public class AiFeedbackClient {
     @Value("${ai.feedback.endpoint}")
     private String endpoint;
 
-    public ApiResponse<AiFeedbackData> evaluate(AiFeedbackRequest request) {
+    public ApiResponse<AiFeedbackResponse> evaluate(AiFeedbackRequest request) {
         String url = baseUrl + endpoint;
 
         log.info("Requesting AI feedback - URL: {}, userId: {}, questionId: {}",
                 url, request.userId(), request.questionId());
 
         try {
-            ApiResponse<AiFeedbackData> response = aiRestClient.post()
+            // AI 서버가 정의한 요청 형태 그대로 전달합니다.
+            ApiResponse<AiFeedbackResponse> response = aiRestClient.post()
                     .uri(url)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
@@ -102,7 +103,7 @@ public class AiFeedbackClient {
                 throw new AiFeedbackServiceException("AI 피드백 응답이 null입니다");
             }
 
-            if (!"success".equals(response.message()) && !"bad_case_detected".equals(response.message())) {
+            if (!"generate_feedback_success".equals(response.message()) && !"bad_case_detected".equals(response.message())) {
                 log.error("AI feedback request failed - unknown message: {}", response.message());
                 throw new AiFeedbackServiceException(
                         "AI 피드백 생성 실패: 알 수 없는 응답 - " + response.message()

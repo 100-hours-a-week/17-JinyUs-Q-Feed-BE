@@ -63,7 +63,7 @@ aws:
 ai:
   feedback:
     base-url: ${AI_FEEDBACK_BASE_URL}
-    endpoint: /api/feedback/evaluate
+    endpoint: /ai/interview/feedback/request
     timeout: 60000  # 60초
   stt:
     base-url: ${AI_STT_BASE_URL}
