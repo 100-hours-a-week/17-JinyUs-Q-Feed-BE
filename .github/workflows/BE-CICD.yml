@@ -1,0 +1,106 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  JAVA_VERSION: '25'
+  GRADLE_VERSION: '8.5'
+
+jobs:
+  ci:
+    name: CI - Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Build JAR
+        run: ./gradlew bootJar
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: build/libs/*.jar
+          retention-days: 1
+
+  cd:
+    name: CD - Deploy to Server
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: build/libs/
+
+      - name: Find JAR file
+        id: find-jar
+        run: |
+          JAR_FILE=$(ls build/libs/*.jar | grep -v 'plain' | head -1)
+          echo "jar_path=$JAR_FILE" >> $GITHUB_OUTPUT
+          echo "Found JAR: $JAR_FILE"
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.QFEED_EC2_SSH_KEY }}" > ~/.ssh/qfeed-keypair-2.pem
+          chmod 600 ~/.ssh/qfeed-keypair-2.pem
+          ssh-keyscan -H ${{ secrets.QFEED_EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          SERVER="${{ secrets.QFEED_EC2_USER }}@${{ secrets.QFEED_EC2_HOST }}"
+          SSH_KEY="~/.ssh/qfeed-keypair-2.pem"
+          JAR_FILE="${{ steps.find-jar.outputs.jar_path }}"
+          
+          # Upload JAR to server
+          echo "Uploading JAR to server..."
+          scp -i $SSH_KEY "$JAR_FILE" $SERVER:/tmp/backend-1.0-SNAPSHOT.jar
+          
+          # Execute deploy script on server
+          echo "Executing deploy script on server..."
+          ssh -i $SSH_KEY $SERVER "sudo /srv/qfeed/deploy-be.sh /tmp/backend-1.0-SNAPSHOT.jar"
+          
+          # Cleanup
+          ssh -i $SSH_KEY $SERVER "rm -f /tmp/backend-1.0-SNAPSHOT.jar"
+          
+          echo "Deployment completed successfully!"
