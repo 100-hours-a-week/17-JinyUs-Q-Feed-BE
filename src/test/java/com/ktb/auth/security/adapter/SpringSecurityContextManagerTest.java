@@ -1,9 +1,7 @@
 package com.ktb.auth.security.adapter;
 
-import com.ktb.auth.domain.UserAccount;
-import com.ktb.auth.security.abstraction.AuthenticatedUser;
-import com.ktb.auth.security.abstraction.RequestContext;
-import com.ktb.auth.security.service.AuthenticatedUserAdapter;
+import com.ktb.auth.service.TokenService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +13,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * SpringSecurityContextManager 단위 테스트
@@ -41,15 +38,11 @@ class SpringSecurityContextManagerTest {
     @DisplayName("인증 정보 설정 성공")
     void setAuthentication_ShouldSetSecurityContext() {
         // given
-        UserAccount mockUser = mock(UserAccount.class);
-        when(mockUser.getId()).thenReturn(1L);
-        when(mockUser.getEmail()).thenReturn("user@example.com");
-
-        AuthenticatedUser user = new AuthenticatedUserAdapter(mockUser, List.of("ROLE_USER"));
-        RequestContext request = header -> "Bearer token";
+        TokenService.TokenClaims claims = new TokenService.TokenClaims(1L, List.of("ROLE_USER"));
+        HttpServletRequest request = mock(HttpServletRequest.class);
 
         // when
-        contextManager.setAuthentication(user, request);
+        contextManager.setAuthentication(claims, request);
 
         // then
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -62,14 +55,10 @@ class SpringSecurityContextManagerTest {
     @DisplayName("인증 컨텍스트 초기화 성공")
     void clearAuthentication_ShouldClearSecurityContext() {
         // given
-        UserAccount mockUser = mock(UserAccount.class);
-        when(mockUser.getId()).thenReturn(1L);
-        when(mockUser.getEmail()).thenReturn("user@example.com");
+        TokenService.TokenClaims claims = new TokenService.TokenClaims(1L, List.of("ROLE_USER"));
+        HttpServletRequest request = mock(HttpServletRequest.class);
 
-        AuthenticatedUser user = new AuthenticatedUserAdapter(mockUser, List.of("ROLE_USER"));
-        RequestContext request = header -> "Bearer token";
-
-        contextManager.setAuthentication(user, request);
+        contextManager.setAuthentication(claims, request);
 
         // when
         contextManager.clearAuthentication();

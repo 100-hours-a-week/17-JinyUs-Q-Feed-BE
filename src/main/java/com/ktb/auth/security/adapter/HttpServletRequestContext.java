@@ -5,10 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-/**
- * HTTP Servlet Request 컨텍스트 어댑터
- * - HttpServletRequest를 RequestContext로 변환
- */
 @Getter
 @RequiredArgsConstructor
 public class HttpServletRequestContext implements RequestContext {

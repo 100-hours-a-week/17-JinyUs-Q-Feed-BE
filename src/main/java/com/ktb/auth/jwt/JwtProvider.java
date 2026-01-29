@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
@@ -58,6 +59,7 @@ public class JwtProvider {
         Date expiryDate = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(userId))
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_ROLES, roles)
@@ -74,6 +76,7 @@ public class JwtProvider {
         Date expiryDate = new Date(now.getTime() + jwtProperties.getRefreshTokenExpiration());
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(String.valueOf(userId))
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_FAMILY_UUID, familyUuid)

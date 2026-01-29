@@ -120,7 +120,8 @@ public class OAuthDomainServiceImpl implements OAuthDomainService {
         UserAccount account = UserAccount.createEmailAccount(userInfo.getEmail(), nickname);
         userAccountRepository.save(account);
 
-        UserOAuth.create(account, provider, providerUserId);
+        UserOAuth accountOAuthInfo = UserOAuth.create(account, provider, providerUserId);
+        userOAuthRepository.save(accountOAuthInfo);
 
         return account;
     }

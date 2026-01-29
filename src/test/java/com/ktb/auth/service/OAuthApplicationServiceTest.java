@@ -22,13 +22,11 @@ import com.ktb.auth.exception.oauth.InvalidExchangeCodeException;
 import com.ktb.auth.exception.oauth.InvalidStateException;
 import com.ktb.auth.exception.token.TokenReuseDetectedException;
 import com.ktb.auth.jwt.JwtProvider;
-import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.repository.TokenFamilyRepository;
 import com.ktb.auth.service.impl.OAuthApplicationServiceImpl;
 import com.ktb.common.domain.ErrorCode;
 import com.ktb.common.exception.BusinessException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +34,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -67,9 +66,6 @@ class OAuthApplicationServiceTest {
     private JwtProvider jwtProvider;
 
     @Mock
-    private JwtProperties jwtProperties;
-
-    @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
     @Mock
@@ -99,20 +95,14 @@ class OAuthApplicationServiceTest {
     private static final Long FAMILY_ID = 10L;
     private static final String EXCHANGE_CODE = "exchange-code-123";
 
-    @BeforeEach
-    void setUp() {
-        when(kakaoProviderProperties.getAuthorizationUri()).thenReturn("https://kauth.kakao.com/oauth/authorize");
-        when(kakaoRegistrationProperties.getClientId()).thenReturn("test-client-id");
-        when(kakaoRegistrationProperties.getRedirectUri()).thenReturn("http://localhost:8080/login/oauth2/code/kakao");
-        when(kakaoRegistrationProperties.getScope()).thenReturn(List.of("profile_nickname", "profile_image", "account_email"));
-        when(jwtProperties.getAccessTokenExpiration()).thenReturn(600000L);
-        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(1209600000L);
-    }
-
     @Test
     @DisplayName("Kakao Authorization URL 생성이 성공해야 한다")
     void getAuthorizationUrl_WithKakao_ShouldSucceed() {
         // given
+        when(kakaoProviderProperties.getAuthorizationUri()).thenReturn("https://kauth.kakao.com/oauth/authorize");
+        when(kakaoRegistrationProperties.getClientId()).thenReturn("test-client-id");
+        when(kakaoRegistrationProperties.getRedirectUri()).thenReturn("http://localhost:8080/login/oauth2/code/kakao");
+        when(kakaoRegistrationProperties.getScope()).thenReturn(List.of("profile_nickname", "profile_image", "account_email"));
         when(oauthDomainService.generateAndStoreState(KAKAO_PROVIDER)).thenReturn(STATE);
 
         // when
@@ -241,6 +231,7 @@ class OAuthApplicationServiceTest {
         when(tokenService.issueAccessToken(USER_ID, List.of("ROLE_USER"))).thenReturn(ACCESS_TOKEN);
         when(jwtProvider.createRefreshToken(USER_ID, FAMILY_UUID)).thenReturn(REFRESH_TOKEN);
         when(jwtProvider.generateTokenHash(REFRESH_TOKEN)).thenReturn(TOKEN_HASH);
+        when(jwtProvider.refreshTokenDuration()).thenReturn(Duration.ofDays(14));
 
         // when
         OAuthLoginResult result = oauthApplicationService.exchange(EXCHANGE_CODE);
@@ -285,6 +276,8 @@ class OAuthApplicationServiceTest {
         when(jwtProvider.createRefreshToken(USER_ID, FAMILY_UUID)).thenReturn("new.refresh.token");
         when(tokenFamilyRepository.findByUuid(FAMILY_UUID)).thenReturn(Optional.of(mockFamily));
         when(jwtProvider.generateTokenHash("new.refresh.token")).thenReturn("new-token-hash");
+        when(jwtProvider.refreshTokenDuration()).thenReturn(Duration.ofDays(14));
+        when(jwtProvider.accessTokenExpiresSeconds()).thenReturn(600);
 
         // when
         TokenRefreshResult result = oauthApplicationService.refreshTokens(REFRESH_TOKEN);

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class KakaoOAuthRegistrationProperties {
 
     private String clientId;
+    private String clientSecret;
     private String redirectUri;
     private List<String> scope = List.of();
 }

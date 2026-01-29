@@ -1,6 +1,5 @@
 package com.ktb.auth.security.adapter;
 
-import com.ktb.auth.domain.UserAccount;
 import java.util.List;
 import lombok.Getter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -9,14 +8,14 @@ import org.springframework.security.core.userdetails.User;
 @Getter
 public class SecurityUserAccount extends User {
 
-    private final UserAccount account;
+    private final Long accountId;
 
-    public SecurityUserAccount(UserAccount account) {
+    public SecurityUserAccount(Long accountId, List<String> roles) {
         super(
-                account.getEmail(),
-                "",  // OAuth 전용이므로 password 없음
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                String.valueOf(accountId),
+                "",
+                roles.stream().map(SimpleGrantedAuthority::new).toList()
         );
-        this.account = account;
+        this.accountId = accountId;
     }
 }
