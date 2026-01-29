@@ -1,11 +1,12 @@
 package com.ktb.file.service.impl;
 
+import com.ktb.common.config.S3Config;
 import com.ktb.file.domain.File;
 import com.ktb.file.domain.FileCategory;
 import com.ktb.file.domain.FileUploadStatus;
 import com.ktb.file.domain.StorageType;
-import com.ktb.file.dto.request.PresignedUrlRequest;
 import com.ktb.file.dto.request.PresignedUrlMethod;
+import com.ktb.file.dto.request.PresignedUrlRequest;
 import com.ktb.file.dto.response.FileUploadConfirmResponse;
 import com.ktb.file.dto.response.PresignedUrlResponse;
 import com.ktb.file.exception.FileInvalidMetadataException;
@@ -21,13 +22,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
@@ -48,11 +49,7 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
-    @Value("${aws.s3.bucket-name}")
-    private String bucketName;
-
-    @Value("${aws.s3.cdn-url-prefix}")
-    private String cdnUrlPrefix;
+    private final S3Config s3Config;
 
     @Value("${aws.s3.key-prefix:uploads}")
     private String keyPrefix;
@@ -105,7 +102,7 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     public boolean isFileExistsInS3(String s3Key) {
         try {
             HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
-                .bucket(bucketName)
+                .bucket(s3Config.getS3().getBucketName())
                 .key(s3Key)
                 .build();
             s3Client.headObject(headObjectRequest);
@@ -117,7 +114,7 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
 
     private String generateS3PresignedUrl(String s3Key, String contentType) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-            .bucket(bucketName)
+            .bucket(s3Config.getS3().getBucketName())
             .key(s3Key)
             .contentType(contentType)
             .build();
@@ -134,7 +131,7 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
 
     private String generateS3PresignedGetUrl(String s3Key) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
+                .bucket(s3Config.getS3().getBucketName())
                 .key(s3Key)
                 .build();
 
@@ -256,6 +253,7 @@ public class S3PresignedUrlServiceImpl implements S3PresignedUrlService {
     }
 
     private String normalizeCdnPrefix() {
+        String cdnUrlPrefix = s3Config.getS3().getCdnUrlPrefix();
         return cdnUrlPrefix.endsWith("/") ? cdnUrlPrefix.substring(0, cdnUrlPrefix.length() - 1) : cdnUrlPrefix;
     }
 }
