@@ -1,17 +1,16 @@
 package com.ktb.auth.config;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "spring.security.oauth2.client.provider.kakao")
+@ConfigurationProperties(prefix = "cors")
 @Getter
 @Setter
-public class KakaoOAuthProviderProperties {
+public class CorsProperties {
 
-    private String authorizationUri;
-    private String tokenUri;
-    private String userInfoUri;
+    private List<String> allowedOrigins = List.of();
 }

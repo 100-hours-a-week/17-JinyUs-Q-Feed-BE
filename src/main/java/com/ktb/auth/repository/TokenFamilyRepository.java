@@ -16,7 +16,7 @@ public interface TokenFamilyRepository extends JpaRepository<TokenFamily, Long> 
     /**
      * 계정의 모든 Family 무효화 (로그아웃 전체)
      */
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE TokenFamily tf " +
             "SET tf.revoked = true, " +
             "tf.revokedAt = CURRENT_TIMESTAMP, " +

@@ -1,6 +1,6 @@
 package com.ktb.auth.controller;
 
-import com.ktb.auth.config.KakaoOAuthRegistrationProperties;
+import com.ktb.auth.config.OAuthProperties;
 import com.ktb.auth.dto.AuthorizationUrlResult;
 import com.ktb.auth.dto.OAuthExchangeCodeResult;
 import com.ktb.auth.dto.OAuthLoginResult;
@@ -42,11 +42,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
-public class OAuthController {
+public class AuthController {
 
     private final OAuthApplicationService oauthApplicationService;
     private final CookieService cookieService;
-    private final KakaoOAuthRegistrationProperties KakaoOAuthRegistrationProperties;
+    private final OAuthProperties OAuthProperties;
 
     private static final String PARAM_EXCHANGE_CODE = "exchange_code";
     private static final String PARAM_ERROR = "error";
@@ -106,6 +106,13 @@ public class OAuthController {
     }
 
     @PostMapping("/oauth/exchange")
+    @Operation(summary = "교환 코드로 토큰 발급", description = "OAuth 교환 코드를 사용하여 Access Token과 Refresh Token을 발급합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "토큰 발급 성공",
+            content = @Content(schema = @Schema(implementation = OAuthLoginResponse.class))),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 교환 코드",
+            content = @Content(schema = @Schema(implementation = com.ktb.common.dto.CommonErrorResponse.class)))
+    })
     public ResponseEntity<ApiResponse<OAuthLoginResponse>> exchange(
         @Valid @RequestBody OAuthExchangeRequest request,
         HttpServletResponse response
@@ -144,14 +151,11 @@ public class OAuthController {
 
         TokenRefreshResult result = oauthApplicationService.refreshTokens(refreshToken);
 
-        // Access Token을 Response Header로 설정
         response.setHeader("Authorization", "Bearer " + result.accessToken());
 
-        // 새로운 Refresh Token을 HTTP-only 쿠키로 설정
         Cookie newRefreshTokenCookie = cookieService.createRefreshTokenCookie(result.refreshToken());
         response.addCookie(newRefreshTokenCookie);
 
-        // 응답에는 expiresIn만 포함 (토큰 정보 제외)
         TokenRefreshResponse responseDto = new TokenRefreshResponse(result.expiresIn());
 
         return ResponseEntity.ok(
@@ -177,10 +181,9 @@ public class OAuthController {
         }
 
         if (refreshToken != null) {
-            oauthApplicationService.logout(principal.getAccount().getId(), refreshToken);
+            oauthApplicationService.logout(principal.getAccountId(), refreshToken);
         }
 
-        // Refresh Token 쿠키 제거
         Cookie expiredCookie = cookieService.createExpiredRefreshTokenCookie();
         response.addCookie(expiredCookie);
 
@@ -190,7 +193,7 @@ public class OAuthController {
     }
 
     @PostMapping("/logout/all")
-    @Operation(summary = "로그아웃", description = "단일 기기 로그아웃을 수행합니다.")
+    @Operation(summary = "전체 로그아웃", description = "모든 기기에서 로그아웃을 수행합니다.")
     @ApiResponses({
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 필요",
@@ -205,9 +208,8 @@ public class OAuthController {
                 .body(new ApiResponse<>("unauthorized_request", null));
         }
 
-        int revokedCount = oauthApplicationService.logoutAll(principal.getAccount().getId());
+        int revokedCount = oauthApplicationService.logoutAll(principal.getAccountId());
 
-        // Refresh Token 쿠키 제거
         Cookie expiredCookie = cookieService.createExpiredRefreshTokenCookie();
         response.addCookie(expiredCookie);
 
@@ -234,7 +236,7 @@ public class OAuthController {
 
     private URI buildRedirectUri(String exchangeCode, String error, String errorMessage) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(
-            KakaoOAuthRegistrationProperties.getRedirectUri());
+            OAuthProperties.getFrontendRedirectUri());
 
         if (exchangeCode != null) {
             builder.queryParam(PARAM_EXCHANGE_CODE, exchangeCode);
