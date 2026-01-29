@@ -2,22 +2,10 @@ package com.ktb.auth.security.service;
 
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.security.abstraction.AuthenticatedUser;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-/**
- * 인증된 사용자 어댑터
- * - UserAccount를 AuthenticatedUser로 변환
- * - 도메인 모델과 보안 모델 분리
- */
-@Getter
-@RequiredArgsConstructor
-public class AuthenticatedUserAdapter implements AuthenticatedUser {
-
-    private final UserAccount account;
-    private final List<String> roles;
+public record AuthenticatedUserAdapter(UserAccount account, List<String> roles) implements AuthenticatedUser {
 
     @Override
     public Long getUserId() {
@@ -30,19 +18,8 @@ public class AuthenticatedUserAdapter implements AuthenticatedUser {
     }
 
     @Override
-    public List<String> getRoles() {
-        return roles;
-    }
-
-    @Override
     public boolean isActive() {
         return account.isActive();
     }
 
-    /**
-     * 원본 UserAccount 반환 (필요 시)
-     */
-    public UserAccount getAccount() {
-        return account;
-    }
 }

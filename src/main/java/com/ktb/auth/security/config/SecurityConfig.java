@@ -1,6 +1,8 @@
 package com.ktb.auth.security.config;
 
+import com.ktb.auth.config.CorsProperties;
 import com.ktb.auth.security.filter.JwtAuthenticationFilter;
+import com.ktb.auth.security.handler.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,24 +26,21 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CorsProperties corsProperties;
+    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF 설정
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 세션 사용 안 함 (Stateless)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // H2 콘솔 iframe 허용
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
-                // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // Public 엔드포인트
                         .requestMatchers(
@@ -53,7 +52,7 @@ public class SecurityConfig {
 
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**", // 기본값 (springdoc 내부 일부가 쓰는 경우 대비)
+                                "/v3/api-docs/**",
                                 "/v3/api-docs/swagger-config",
                                 "/api-docs/**"
                         ).permitAll()
@@ -64,22 +63,22 @@ public class SecurityConfig {
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                )
 
-                // JWT 인증 필터 추가
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * CORS 설정
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080"));
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

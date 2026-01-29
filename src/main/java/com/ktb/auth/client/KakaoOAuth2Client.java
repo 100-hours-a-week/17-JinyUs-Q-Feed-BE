@@ -1,11 +1,13 @@
 package com.ktb.auth.client;
 
+import com.ktb.auth.config.KakaoOAuthProviderProperties;
+import com.ktb.auth.config.KakaoOAuthRegistrationProperties;
 import com.ktb.auth.dto.response.KakaoUserInfoResponse;
 import com.ktb.auth.dto.response.KakaoTokenResponse;
 import com.ktb.auth.exception.oauth.OAuthProviderException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -30,38 +32,19 @@ public class KakaoOAuth2Client {
     private static final String ERROR_TOKEN_RESPONSE_EMPTY = "Kakao Access Token을 받지 못했습니다.";
     private static final String ERROR_USERINFO_RESPONSE_EMPTY = "Kakao 사용자 정보를 받지 못했습니다.";
 
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
-    private String clientId;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.client-secret}")
-    private String clientSecret;
-
-    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
-    private String redirectUri;
-
-    @Value("${spring.security.oauth2.client.provider.kakao.token-uri}")
-    private String tokenUri;
-
-    @Value("${spring.security.oauth2.client.provider.kakao.user-info-uri}")
-    private String userInfoUri;
+    private final RestTemplate restTemplate;
+    private final KakaoOAuthRegistrationProperties registrationProperties;
+    private final KakaoOAuthProviderProperties providerProperties;
 
     public String getAccessToken(String code) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add(PARAM_GRANT_TYPE, GRANT_TYPE_AUTHORIZATION_CODE);
-        params.add(PARAM_CLIENT_ID, clientId);
-        params.add(PARAM_CLIENT_SECRET, clientSecret);
-        params.add(PARAM_REDIRECT_URI, redirectUri);
-        params.add(PARAM_CODE, code);
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
+        HttpEntity<MultiValueMap<String, String>> request = getValueMapHttpEntity(
+            code, headers);
 
         ResponseEntity<KakaoTokenResponse> response = restTemplate.exchange(
-                tokenUri,
+                providerProperties.getTokenUri(),
                 HttpMethod.POST,
                 request,
                 KakaoTokenResponse.class
@@ -81,10 +64,10 @@ public class KakaoOAuth2Client {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         ResponseEntity<KakaoUserInfoResponse> response = restTemplate.exchange(
-                userInfoUri,
-                HttpMethod.GET,
-                request,
-                KakaoUserInfoResponse.class
+            providerProperties.getUserInfoUri(),
+            HttpMethod.GET,
+            request,
+            KakaoUserInfoResponse.class
         );
 
         if (response.getBody() == null) {
@@ -92,5 +75,17 @@ public class KakaoOAuth2Client {
         }
 
         return response.getBody();
+    }
+
+    private @NonNull HttpEntity<MultiValueMap<String, String>> getValueMapHttpEntity(String code,
+                                                                                          HttpHeaders headers) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add(PARAM_GRANT_TYPE, GRANT_TYPE_AUTHORIZATION_CODE);
+        params.add(PARAM_CLIENT_ID, registrationProperties.getClientId());
+        params.add(PARAM_CLIENT_SECRET, registrationProperties.getClientSecret());
+        params.add(PARAM_REDIRECT_URI, registrationProperties.getRedirectUri());
+        params.add(PARAM_CODE, code);
+
+        return new HttpEntity<>(params, headers);
     }
 }

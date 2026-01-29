@@ -6,12 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties(prefix = "spring.security.oauth2.client.provider.kakao")
+@ConfigurationProperties(prefix = "oauth")
 @Getter
 @Setter
-public class KakaoOAuthProviderProperties {
+public class OAuthProperties {
 
-    private String authorizationUri;
-    private String tokenUri;
-    private String userInfoUri;
+    private String frontendRedirectUri;
 }

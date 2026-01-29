@@ -1,35 +1,51 @@
 package com.ktb.auth.controller;
 
+import com.ktb.auth.config.CorsProperties;
+import com.ktb.auth.config.OAuthProperties;
 import com.ktb.auth.dto.AuthorizationUrlResult;
+import com.ktb.auth.security.adapter.SecurityUserAccount;
+import com.ktb.auth.security.config.SecurityConfig;
+import com.ktb.auth.security.filter.JwtAuthenticationFilter;
+import com.ktb.auth.security.handler.CustomAuthenticationEntryPoint;
+import org.springframework.context.annotation.Import;
 import com.ktb.auth.dto.OAuthExchangeCodeResult;
 import com.ktb.auth.dto.OAuthLoginResult;
 import com.ktb.auth.dto.TokenRefreshResult;
 import com.ktb.auth.dto.UserInfo;
 import com.ktb.auth.service.CookieService;
 import com.ktb.auth.service.OAuthApplicationService;
+import java.util.List;
+import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.Cookie;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(OAuthController.class)
+@WebMvcTest(AuthController.class)
+@Import({OAuthProperties.class, CorsProperties.class, SecurityConfig.class})
 @DisplayName("OAuthController 단위 테스트")
-@TestPropertySource(properties = "app.oauth2.redirect-uri=http://localhost:3000/oauth/callback")
-class OAuthControllerTest {
+@TestPropertySource(properties = {
+    "oauth.frontend-redirect-uri=http://localhost:3000/oauth/callback",
+    "cookie.secure=false",
+    "cors.allowed-origins=http://localhost:3000,http://localhost:8080"
+})
+class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -39,6 +55,21 @@ class OAuthControllerTest {
 
     @MockitoBean
     private CookieService cookieService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        doAnswer(invocation -> {
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any(FilterChain.class));
+    }
 
     private static final String ACCESS_TOKEN = "access.token.jwt";
     private static final String REFRESH_TOKEN = "refresh.token.jwt";
@@ -132,16 +163,17 @@ class OAuthControllerTest {
     }
 
     @Test
-    @WithMockUser
     @DisplayName("로그아웃 성공 + 쿠키 삭제 확인")
     void logout_ShouldSucceedAndDeleteCookie() throws Exception {
         // given
+        SecurityUserAccount principal = new SecurityUserAccount(1L, List.of("ROLE_USER"));
+
         Cookie expiredCookie = new Cookie("refreshToken", "");
         expiredCookie.setMaxAge(0);
         when(cookieService.createExpiredRefreshTokenCookie()).thenReturn(expiredCookie);
 
         // when & then
-        mockMvc.perform(post("/api/auth/logout").with(csrf())
+        mockMvc.perform(post("/api/auth/logout").with(csrf()).with(user(principal))
                         .cookie(new Cookie("refreshToken", REFRESH_TOKEN)))
                 .andExpect(status().isOk())
                 .andExpect(cookie().maxAge("refreshToken", 0));
@@ -150,17 +182,18 @@ class OAuthControllerTest {
     }
 
     @Test
-    @WithMockUser
     @DisplayName("전체 로그아웃 성공 + 쿠키 삭제 확인")
     void logoutAll_ShouldSucceedAndDeleteCookie() throws Exception {
         // given
+        SecurityUserAccount principal = new SecurityUserAccount(1L, List.of("ROLE_USER"));
+
         when(oauthApplicationService.logoutAll(any())).thenReturn(3);
         Cookie expiredCookie = new Cookie("refreshToken", "");
         expiredCookie.setMaxAge(0);
         when(cookieService.createExpiredRefreshTokenCookie()).thenReturn(expiredCookie);
 
         // when & then
-        mockMvc.perform(post("/api/auth/logout/all").with(csrf()))
+        mockMvc.perform(post("/api/auth/logout/all").with(csrf()).with(user(principal)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.revokedSessionsCount").value(3))
                 .andExpect(cookie().maxAge("refreshToken", 0));
