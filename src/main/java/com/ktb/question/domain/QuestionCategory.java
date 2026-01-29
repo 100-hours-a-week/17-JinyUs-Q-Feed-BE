@@ -11,8 +11,7 @@ public enum QuestionCategory {
     NETWORK("네트워크"),
     DB("데이터베이스"),
     COMPUTER_ARCHITECTURE("컴퓨터 구조"),
-    ALGORITHM("알고리즘"),
-    DATA_STRUCTURE("자료구조");
+    DATA_STRUCTURE_ALGORITHM("자료구조&알고리즘");
 
     private final String category;
 
