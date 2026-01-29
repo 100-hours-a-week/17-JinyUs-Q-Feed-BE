@@ -28,7 +28,6 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsProperties corsProperties;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
-    private final SecurityProperties securityProperties;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,16 +41,21 @@ public class SecurityConfig {
 
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers(securityProperties.getPermitAllPatterns())
-                        .permitAll();
+                .authorizeHttpRequests(auth -> auth
+                    // Public 엔드포인트
+                    .requestMatchers(
+                        "/",
+                        "/error",
+                        "/actuator/health",
+                        "/api/auth/**"
+                    ).permitAll()
 
-                    auth.requestMatchers(securityProperties.getAnonymousOnlyPatterns())
-                        .anonymous();
+                    // Actuator Admin 전용
+                    .requestMatchers("/actuator/**").hasRole("ADMIN")
 
-                    auth.anyRequest()
-                        .authenticated();
-                })
+                    // 나머지는 인증 필요
+                    .anyRequest().authenticated()
+                )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(authenticationEntryPoint)
                 )
