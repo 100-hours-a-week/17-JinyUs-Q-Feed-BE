@@ -16,7 +16,7 @@ jobs:
   ci:
     name: CI - Build and Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,6 +38,8 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Grant execute permission for gradlew
+        env:
+          AWS_S3_KEY_PREFIX: uploads
         run: chmod +x gradlew
 
       - name: Build with Gradle
@@ -55,7 +57,7 @@ jobs:
           name: backend-jar
           path: build/libs/*.jar
           retention-days: 1
-          
+
       - name: Discord 알림 (CI 통과)
         if: success()
         continue-on-error: true
@@ -80,7 +82,7 @@ jobs:
     needs: ci
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,18 +112,18 @@ jobs:
           SERVER="${{ secrets.QFEED_EC2_USER }}@${{ secrets.QFEED_EC2_HOST }}"
           SSH_KEY="~/.ssh/qfeed-keypair-2.pem"
           JAR_FILE="${{ steps.find-jar.outputs.jar_path }}"
-          
+
           # Upload JAR to server
           echo "Uploading JAR to server..."
           scp -i $SSH_KEY "$JAR_FILE" $SERVER:/tmp/backend-1.0-SNAPSHOT.jar
-          
+
           # Execute deploy script on server
           echo "Executing deploy script on server..."
           ssh -i $SSH_KEY $SERVER "sudo /srv/qfeed/deploy-be.sh /tmp/backend-1.0-SNAPSHOT.jar"
-          
+
           # Cleanup
           ssh -i $SSH_KEY $SERVER "rm -f /tmp/backend-1.0-SNAPSHOT.jar"
-          
+
           echo "Deployment completed successfully!"
 
   # CI 실패 시 어떤 과정에서 실패했는지 Discord 알림
