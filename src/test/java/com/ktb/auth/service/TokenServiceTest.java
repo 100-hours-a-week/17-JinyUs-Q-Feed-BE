@@ -2,12 +2,18 @@ package com.ktb.auth.service;
 
 import com.ktb.auth.domain.RefreshToken;
 import com.ktb.auth.domain.TokenFamily;
+import com.ktb.auth.domain.UserAccount;
+import com.ktb.auth.dto.jwt.RefreshTokenClaims;
+import com.ktb.auth.dto.jwt.RefreshTokenEntity;
+import com.ktb.auth.dto.jwt.TokenClaims;
 import com.ktb.auth.exception.token.InvalidAccessTokenException;
 import com.ktb.auth.exception.token.InvalidRefreshTokenException;
 import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
+import com.ktb.auth.repository.UserAccountRepository;
 import com.ktb.auth.service.impl.TokenServiceImpl;
+import com.ktb.common.config.WithMockCustomUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.DisplayName;
@@ -34,9 +40,6 @@ class TokenServiceTest {
     private JwtProvider jwtProvider;
 
     @Mock
-    private JwtProperties jwtProperties;
-
-    @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
@@ -50,19 +53,20 @@ class TokenServiceTest {
     private static final String EXPIRED_TOKEN = "expired.token";
     private static final String TAMPERED_TOKEN = "tampered.token";
     private static final String TOKEN_HASH = "token-hash-sha256";
+    private static final String USER_NICKNAME = "테스트유저";
 
     @Test
     @DisplayName("Access Token 발급이 성공해야 한다")
     void issueAccessToken_ShouldSucceed() {
         // given
-        when(jwtProvider.createAccessToken(USER_ID, ROLES)).thenReturn(VALID_ACCESS_TOKEN);
+        when(jwtProvider.createAccessToken(USER_ID, ROLES, USER_NICKNAME)).thenReturn(VALID_ACCESS_TOKEN);
 
         // when
-        String accessToken = tokenService.issueAccessToken(USER_ID, ROLES);
+        String accessToken = tokenService.issueAccessToken(USER_ID, ROLES, USER_NICKNAME);
 
         // then
         assertThat(accessToken).isEqualTo(VALID_ACCESS_TOKEN);
-        verify(jwtProvider).createAccessToken(USER_ID, ROLES);
+        verify(jwtProvider).createAccessToken(USER_ID, ROLES, USER_NICKNAME);
     }
 
     @Test
@@ -71,11 +75,12 @@ class TokenServiceTest {
         // given
         Claims mockClaims = mock(Claims.class);
         when(mockClaims.get("userId", Long.class)).thenReturn(USER_ID);
+        when(mockClaims.get("nickname", String.class)).thenReturn(USER_NICKNAME);
         when(mockClaims.get("roles", List.class)).thenReturn(ROLES);
         when(jwtProvider.validateAccessToken(VALID_ACCESS_TOKEN)).thenReturn(mockClaims);
 
         // when
-        TokenService.TokenClaims claims = tokenService.validateAccessToken(VALID_ACCESS_TOKEN);
+        TokenClaims claims = tokenService.validateAccessToken(VALID_ACCESS_TOKEN);
 
         // then
         assertThat(claims.userId()).isEqualTo(USER_ID);
@@ -117,11 +122,12 @@ class TokenServiceTest {
         // given
         Claims mockClaims = mock(Claims.class);
         when(mockClaims.get("userId", Long.class)).thenReturn(USER_ID);
+        when(mockClaims.get("nickname", String.class)).thenReturn(USER_NICKNAME);
         when(mockClaims.get("familyUuid", String.class)).thenReturn(FAMILY_UUID);
         when(jwtProvider.validateRefreshToken(VALID_REFRESH_TOKEN)).thenReturn(mockClaims);
 
         // when
-        TokenService.RefreshTokenClaims claims = tokenService.validateRefreshToken(VALID_REFRESH_TOKEN);
+        RefreshTokenClaims claims = tokenService.validateRefreshToken(VALID_REFRESH_TOKEN);
 
         // then
         assertThat(claims.userId()).isEqualTo(USER_ID);
@@ -160,7 +166,7 @@ class TokenServiceTest {
                 .thenReturn(Optional.of(mockToken));
 
         // when
-        TokenService.RefreshTokenEntity entity = tokenService.findByTokenHash(TOKEN_HASH);
+        RefreshTokenEntity entity = tokenService.findByTokenHash(TOKEN_HASH);
 
         // then
         assertThat(entity.id()).isEqualTo(10L);

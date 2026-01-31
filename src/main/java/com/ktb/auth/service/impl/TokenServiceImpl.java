@@ -1,8 +1,10 @@
 package com.ktb.auth.service.impl;
 
+import com.ktb.auth.dto.jwt.RefreshTokenClaims;
+import com.ktb.auth.dto.jwt.RefreshTokenEntity;
+import com.ktb.auth.dto.jwt.TokenClaims;
 import com.ktb.auth.exception.token.InvalidAccessTokenException;
 import com.ktb.auth.exception.token.InvalidRefreshTokenException;
-import com.ktb.auth.jwt.JwtProperties;
 import com.ktb.auth.jwt.JwtProvider;
 import com.ktb.auth.repository.RefreshTokenRepository;
 import com.ktb.auth.service.TokenService;
@@ -18,45 +20,52 @@ import org.springframework.transaction.annotation.Transactional;
 public class TokenServiceImpl implements TokenService {
 
     private final JwtProvider jwtProvider;
-    private final JwtProperties jwtProperties;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private static final String DEFAULT_NICKNAME = "사용자";
+
     @Override
-    public String issueAccessToken(Long accountId, List<String> roles) {
-        return jwtProvider.createAccessToken(accountId, roles);
+    public String issueAccessToken(Long accountId, List<String> roles, String nickname) {
+        if(nickname.isBlank()) {
+            nickname = DEFAULT_NICKNAME;
+        }
+
+        return jwtProvider.createAccessToken(accountId, roles, nickname);
     }
 
     @Override
-    public TokenService.TokenClaims validateAccessToken(String accessToken) {
+    public TokenClaims validateAccessToken(String accessToken) {
         try {
             Claims claims = jwtProvider.validateAccessToken(accessToken);
             Long userId = claims.get("userId", Long.class);
+            String userNickname = claims.get("nickname", String.class);
             @SuppressWarnings("unchecked")
             List<String> roles = claims.get("roles", List.class);
 
-            return new TokenService.TokenClaims(userId, roles);
+            return new TokenClaims(userId, userNickname, roles);
         } catch (Exception e) {
             throw new InvalidAccessTokenException();
         }
     }
 
     @Override
-    public TokenService.RefreshTokenClaims validateRefreshToken(String refreshToken) {
+    public RefreshTokenClaims validateRefreshToken(String refreshToken) {
         try {
             Claims claims = jwtProvider.validateRefreshToken(refreshToken);
             Long userId = claims.get("userId", Long.class);
+            String userNickname = claims.get("nickname", String.class);
             String familyUuid = claims.get("familyUuid", String.class);
 
-            return new TokenService.RefreshTokenClaims(userId, familyUuid);
+            return new RefreshTokenClaims(userId, userNickname, familyUuid);
         } catch (Exception e) {
             throw new InvalidRefreshTokenException(e.getMessage());
         }
     }
 
     @Override
-    public TokenService.RefreshTokenEntity findByTokenHash(String tokenHash) {
+    public RefreshTokenEntity findByTokenHash(String tokenHash) {
         return refreshTokenRepository.findByTokenHashWithFamily(tokenHash)
-                .map(token -> new TokenService.RefreshTokenEntity(
+                .map(token -> new RefreshTokenEntity(
                         token.getId(),
                         token.getFamily().getId(),
                         token.getUsed(),
