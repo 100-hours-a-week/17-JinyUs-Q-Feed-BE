@@ -21,7 +21,8 @@ public class S3Config {
     @Getter
     @Setter
     public static class S3Properties {
-        private String bucketName;
+        private String uploadBucketName;
+        private String ttsBucketName;
         private String cdnUrlPrefix;
     }
 

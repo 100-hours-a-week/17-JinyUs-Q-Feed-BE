@@ -39,6 +39,14 @@ spring:
             token-uri: https://kauth.kakao.com/oauth/token
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
+  cloud:
+    aws:
+      region:
+        static: ${AWS_REGION}
+      parameterstore:
+        enabled: ${AWS_PARAMETER_STORE_ENABLED:true}
+  config:
+    import: ${SPRING_CONFIG_IMPORT:optional:aws-parameterstore:/qfeed/dev/be/}
 
   jpa:
     hibernate:
@@ -64,20 +72,28 @@ jwt:
   refresh-token-expiration: 1209600000  # 14일 (ms)
 
 aws:
-  region: ${AWS_REGION:ap-northeast-2}
+  region: ${AWS_REGION}
   s3:
-    bucket-name: ${AWS_S3_BUCKET_NAME}
+    upload-bucket-name: ${AWS_S3_UPLOAD_BUCKET_NAME}
+    tts-bucket-name: ${AWS_S3_TTS_BUCKET_NAME}
     cdn-url-prefix: ${AWS_S3_CDN_URL_PREFIX}
-    key-prefix: ${AWS_S3_KEY_PREFIX}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
 
 ai:
   feedback:
     base-url: ${AI_FEEDBACK_BASE_URL}
     endpoint: /ai/interview/feedback/request
+    follow-up-endpoint: /ai/interview/follow-up/questions
     timeout: 60000  # 60초
   stt:
     base-url: ${AI_STT_BASE_URL}
     endpoint: /ai/stt
+    timeout: 60000  # 60초
+  tts:
+    base-url: ${AI_TTS_BASE_URL:${AI_STT_BASE_URL:http://localhost:8000}}
+    endpoint: /ai/tts
     timeout: 60000  # 60초
 
 management:
@@ -152,3 +168,13 @@ abuse:
       enabled: ${ABUSE_GUARD_QUALITY_SCORE_ENABLED:true}
     quota:
       enabled: ${ABUSE_GUARD_QUOTA_ENABLED:true}
+
+interview:
+  session:
+    practice-ttl: PT10M
+    real-ttl: PT90M
+    real-max-turn: ${INTERVIEW_SESSION_REAL_MAX_TURN}
+    cleanup-interval-ms: 300000
+    store:
+      history-key-prefix: interview:session
+      feedback-key-prefix: interview:feedback

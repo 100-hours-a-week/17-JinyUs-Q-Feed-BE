@@ -1,4 +1,12 @@
 spring:
+  config:
+    import: ""
+  cloud:
+    aws:
+      parameterstore:
+        enabled: false
+      region:
+        static: ap-northeast-2
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb
@@ -52,11 +60,16 @@ jwt:
 ai:
   feedback:
     base-url: http://localhost:8000
-    endpoint: /api/v1/feedback/evaluate
+    endpoint: /ai/interview/feedback/request
+    follow-up-endpoint: /ai/interview/follow-up/questions
     timeout: 30000
   stt:
-    base-url: http://localhost:8001
+    base-url: http://localhost:8000
     endpoint: /ai/stt
+    timeout: 60000
+  tts:
+    base-url: http://localhost:8000
+    endpoint: /ai/tts
     timeout: 60000
 
 oauth:
@@ -65,4 +78,15 @@ oauth:
 aws:
   region: ap-northeast-2
   s3:
-    bucket-name: test-bucket
+    upload-bucket-name: test-upload-bucket
+    tts-bucket-name: test-tts-bucket
+    cdn-url-prefix: https://cdn.test.local
+  credentials:
+    access-key: test-access-key
+    secret-key: test-secret-key
+
+interview:
+  session:
+    practice-ttl: PT10M
+    real-ttl: PT90M
+    real-max-turn: 3

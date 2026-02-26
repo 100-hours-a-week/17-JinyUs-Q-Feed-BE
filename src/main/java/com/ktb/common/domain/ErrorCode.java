@@ -53,6 +53,14 @@ public enum ErrorCode {
     ANSWER_INVALID_STATUS_TRANSITION(400, "A005", "허용되지 않는 답변 상태 전이입니다"),
     ANSWER_TYPE_REQUIRED(400, "A006", "답변 유형은 필수입니다"),
 
+    // ==================== Interview Session 관련 ====================
+    INTERVIEW_SESSION_NOT_FOUND(404, "IS001", "인터뷰 세션을 찾을 수 없습니다"),
+    INTERVIEW_SESSION_ACCESS_DENIED(403, "IS002", "인터뷰 세션 접근 권한이 없습니다"),
+    INTERVIEW_SESSION_EXPIRED(409, "IS003", "인터뷰 세션이 만료되었습니다"),
+    INTERVIEW_SESSION_INVALID_STATE(409, "IS004", "인터뷰 세션 상태가 올바르지 않습니다"),
+    INTERVIEW_SESSION_INVALID_INPUT(400, "IS005", "인터뷰 요청 입력값이 올바르지 않습니다"),
+    INTERVIEW_SESSION_INVALID_CONFIG(500, "IS006", "인터뷰 세션 설정값이 올바르지 않습니다"),
+
     // ==================== File 관련 ====================
     INVALID_FILE_FORMAT(400, "F001", "지원하지 않는 파일 형식입니다"),
     FILE_NOT_FOUND(404, "F002", "파일을 찾을 수 없습니다"),
@@ -70,7 +78,7 @@ public enum ErrorCode {
     // ==================== Metric 관련 ====================
     METRIC_NAME_REQUIRED(400, "M001", "평가 지표 이름은 필수입니다"),
     METRIC_NAME_TOO_LONG(400, "M002", "평가 지표 이름은 100자를 초과할 수 없습니다"),
-    METRIC_SCORE_INVALID_RANGE(400, "M003", "평가 점수는 0-100 사이여야 합니다"),
+    METRIC_SCORE_INVALID_RANGE(400, "M003", "평가 점수는 1-5 사이여야 합니다"),
     METRIC_NOT_FOUND(404, "M004", "평가 지표를 찾을 수 없습니다"),
 
     // ==================== Search 관련 ====================
@@ -90,6 +98,7 @@ public enum ErrorCode {
     AI_FEEDBACK_INTERNAL_SERVER_ERROR(422, "AI010", "AI 서버 내부 오류가 발생했습니다"),
     AI_FEEDBACK_LLM_SERVICE_UNAVAILABLE(422, "AI011", "LLM 서비스 연결에 실패했습니다"),
     AI_FEEDBACK_SERVICE_TEMPORARILY_UNAVAILABLE(422, "AI012", "AI 피드백 서비스를 일시적으로 사용할 수 없습니다"),
+    AI_FEEDBACK_DEPENDENCY_FAILED(502, "AI013", "AI 피드백 의존 서비스 호출에 실패했습니다"),
 
     // ==================== STT 관련 ====================
     STT_SERVICE_ERROR(422, "STT001", "STT 서비스 오류가 발생했습니다"),
@@ -100,12 +109,49 @@ public enum ErrorCode {
     STT_TIMEOUT(408, "STT006", "STT 변환 시간이 초과되었습니다"),
     STT_REQUEST_FAILED(422, "STT007", "STT 요청에 실패했습니다"),
 
+    // ==================== TTS 관련 ====================
+    TTS_SERVICE_ERROR(500, "TTS001", "TTS 서비스 오류가 발생했습니다"),
+    TTS_API_KEY_INVALID(401, "TTS002", "TTS API 키가 유효하지 않습니다"),
+    TTS_VOICE_NOT_FOUND(404, "TTS003", "TTS 음성 모델을 찾을 수 없습니다"),
+    TTS_TIMEOUT(408, "TTS004", "TTS 변환 시간이 초과되었습니다"),
+    TTS_RATE_LIMIT_EXCEEDED(429, "TTS005", "TTS 요청 한도를 초과했습니다"),
+    TTS_DEPENDENCY_FAILED(502, "TTS006", "TTS 의존 서비스 호출에 실패했습니다"),
+
     // ==================== Abuse 관련 ====================
     ABUSE_RATE_LIMIT_EXCEEDED(429, "ABUSE001", "요청 속도 제한을 초과했습니다"),
     ABUSE_DUPLICATE_CONTENT(409, "ABUSE002", "중복된 답변입니다"),
     ABUSE_LOW_QUALITY_CONTENT(400, "ABUSE003", "답변 품질이 기준에 미달합니다"),
     ABUSE_DAILY_QUOTA_EXCEEDED(429, "ABUSE004", "일일 제출 한도를 초과했습니다"),
     ABUSE_COOLDOWN_ACTIVE(429, "ABUSE005", "재시도 대기 시간이 남아있습니다"),
+
+    // ==================== Notification 관련 ====================
+    NOTICE_NOT_FOUND(404, "N001", "공지사항을 찾을 수 없습니다"),
+    NOTICE_ALREADY_PUBLISHED(400, "N002", "이미 발행된 공지사항입니다"),
+    NOTICE_INVALID_STATUS_TRANSITION(400, "N003", "허용되지 않는 공지사항 상태 전이입니다"),
+    NOTICE_TITLE_REQUIRED(400, "N004", "공지 제목은 필수입니다"),
+    NOTICE_BODY_REQUIRED(400, "N005", "공지 내용은 필수입니다"),
+    NOTICE_TITLE_TOO_LONG(400, "N006", "공지 제목은 200자를 초과할 수 없습니다"),
+    NOTICE_BODY_TOO_LONG(400, "N007", "공지 내용은 2000자를 초과할 수 없습니다"),
+    USER_NOTIFICATION_NOT_FOUND(404, "N011", "알림을 찾을 수 없습니다"),
+    USER_NOTIFICATION_ACCESS_DENIED(403, "N012", "알림에 대한 접근 권한이 없습니다"),
+    USER_NOTIFICATION_TITLE_REQUIRED(400, "N013", "알림 제목은 필수입니다"),
+    USER_NOTIFICATION_TITLE_TOO_LONG(400, "N014", "알림 제목은 200자를 초과할 수 없습니다"),
+    NOTIFICATION_PREF_NOT_FOUND(404, "N021", "알림 수신 설정을 찾을 수 없습니다"),
+    CAMPAIGN_KEY_REQUIRED(400, "N030", "캠페인 키는 필수입니다"),
+    CAMPAIGN_NOT_FOUND(404, "N031", "캠페인을 찾을 수 없습니다"),
+    CAMPAIGN_KEY_DUPLICATE(409, "N032", "중복된 캠페인 키입니다"),
+    CAMPAIGN_INVALID_STATUS_TRANSITION(400, "N033", "허용되지 않는 캠페인 상태 전이입니다"),
+    CAMPAIGN_KEY_TOO_LONG(400, "N034", "캠페인 키는 200자를 초과할 수 없습니다"),
+    CAMPAIGN_SCHEDULED_AT_REQUIRED(400, "N035", "캠페인 예약 시간은 필수입니다"),
+
+    // ==================== Device 관련 ====================
+    DEVICE_NOT_FOUND(404, "DEV001", "디바이스를 찾을 수 없습니다"),
+    DEVICE_TOKEN_REQUIRED(400, "DEV002", "푸시 토큰이 필요합니다"),
+    DEVICE_ALREADY_REGISTERED(409, "DEV003", "이미 등록된 디바이스입니다"),
+
+    // ==================== Notification Target 관련 ====================
+    NOTIFICATION_TARGET_NOT_FOUND(404, "NT001", "발송 대상을 찾을 수 없습니다"),
+    NOTIFICATION_TARGET_DUPLICATE(409, "NT002", "중복 발송 대상입니다"),
 
     // ==================== 공통 ====================
     INVALID_INPUT(400, "C001", "입력값이 올바르지 않습니다"),
