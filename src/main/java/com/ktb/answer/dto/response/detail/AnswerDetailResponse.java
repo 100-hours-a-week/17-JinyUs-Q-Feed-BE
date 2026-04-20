@@ -4,7 +4,7 @@ import com.ktb.answer.dto.AiFeedbackSummary;
 import com.ktb.answer.dto.AnswerDetailResult;
 import com.ktb.answer.dto.response.common.KeywordCheck;
 import com.ktb.answer.dto.response.common.MetricScore;
-import com.ktb.interview.session.dto.response.InterviewSessionFinalFeedbackResponse;
+import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 

@@ -11,7 +11,7 @@ import com.ktb.interview.port.out.InterviewSessionFinalFeedbackStore;
 import com.ktb.interview.domain.InterviewHistoryItem;
 import com.ktb.interview.domain.InterviewQuestionSnapshot;
 import com.ktb.interview.domain.InterviewSession;
-import com.ktb.interview.session.exception.InterviewSessionInvalidStateException;
+import com.ktb.interview.exception.InterviewSessionInvalidStateException;
 import com.ktb.interview.domain.entity.InterviewSessionEntity;
 import com.ktb.interview.domain.entity.InterviewSessionFeedbackEntity;
 import com.ktb.interview.domain.entity.InterviewSessionMetricEntity;

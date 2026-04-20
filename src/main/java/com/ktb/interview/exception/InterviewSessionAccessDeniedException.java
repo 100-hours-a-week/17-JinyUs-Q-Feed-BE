@@ -1,4 +1,4 @@
-package com.ktb.interview.session.exception;
+package com.ktb.interview.exception;
 
 import com.ktb.common.domain.ErrorCode;
 import com.ktb.common.exception.BusinessException;

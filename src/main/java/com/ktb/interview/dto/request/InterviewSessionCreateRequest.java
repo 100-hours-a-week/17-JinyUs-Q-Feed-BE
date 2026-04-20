@@ -1,4 +1,4 @@
-package com.ktb.interview.session.dto.request;
+package com.ktb.interview.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.ktb.answer.domain.AnswerType;

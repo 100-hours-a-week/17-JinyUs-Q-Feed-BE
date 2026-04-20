@@ -1,11 +1,11 @@
 package com.ktb.interview.application;
 
-import com.ktb.interview.session.dto.request.InterviewSessionCreateRequest;
-import com.ktb.interview.session.dto.response.InterviewSessionCreateResponse;
-import com.ktb.interview.session.dto.response.InterviewSessionFinalFeedbackResponse;
-import com.ktb.interview.session.dto.response.InterviewSessionStateResponse;
-import com.ktb.interview.session.dto.response.SessionFeedbackFailedResponse;
-import com.ktb.interview.session.dto.response.SessionFeedbackPendingResponse;
+import com.ktb.interview.dto.request.InterviewSessionCreateRequest;
+import com.ktb.interview.dto.response.InterviewSessionCreateResponse;
+import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
+import com.ktb.interview.dto.response.InterviewSessionStateResponse;
+import com.ktb.interview.dto.response.SessionFeedbackFailedResponse;
+import com.ktb.interview.dto.response.SessionFeedbackPendingResponse;
 
 /**
  * 인터뷰 세션 생성/상태/최종 피드백 조회 유스케이스 포트.
