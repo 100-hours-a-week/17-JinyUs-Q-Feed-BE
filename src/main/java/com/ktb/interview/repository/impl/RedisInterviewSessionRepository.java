@@ -1,8 +1,8 @@
-package com.ktb.interview.session.repository.impl;
+package com.ktb.interview.repository.impl;
 
 import com.ktb.interview.config.InterviewSessionStorePolicy;
 import com.ktb.interview.domain.InterviewSession;
-import com.ktb.interview.session.repository.InterviewSessionRepository;
+import com.ktb.interview.repository.InterviewSessionRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;

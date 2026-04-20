@@ -1,7 +1,7 @@
 package com.ktb.interview.application.service.flow;
 
 import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
-import com.ktb.interview.port.out.InterviewSessionFinalFeedbackStore;
+import com.ktb.interview.repository.InterviewSessionFinalFeedbackStore;
 import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.service.InterviewSessionService;
 import lombok.RequiredArgsConstructor;

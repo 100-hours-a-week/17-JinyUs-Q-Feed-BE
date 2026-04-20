@@ -1,8 +1,8 @@
-package com.ktb.interview.session.repository.impl;
+package com.ktb.interview.repository.impl;
 
 import com.ktb.interview.config.InterviewSessionStorePolicy;
 import com.ktb.interview.domain.InterviewSessionFeedback;
-import com.ktb.interview.session.repository.InterviewSessionFeedbackRepository;
+import com.ktb.interview.repository.InterviewSessionFeedbackRepository;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;

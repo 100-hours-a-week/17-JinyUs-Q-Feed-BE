@@ -1,4 +1,4 @@
-package com.ktb.interview.port.out;
+package com.ktb.interview.repository;
 
 import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
 import com.ktb.interview.domain.InterviewSession;
