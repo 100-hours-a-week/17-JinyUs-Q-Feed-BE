@@ -1,4 +1,4 @@
-package com.ktb.interview.session.persistence.entity;
+package com.ktb.interview.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;

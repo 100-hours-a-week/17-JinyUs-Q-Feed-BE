@@ -1,4 +1,4 @@
-package com.ktb.interview.session.domain;
+package com.ktb.interview.domain;
 
 /**
  * 인터뷰 세션 상태.

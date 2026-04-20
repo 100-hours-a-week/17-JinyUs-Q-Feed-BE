@@ -1,9 +1,9 @@
 package com.ktb.interview.application.service.flow;
 
 import com.ktb.answer.domain.AnswerType;
-import com.ktb.interview.session.domain.InterviewHistoryItem;
-import com.ktb.interview.session.domain.InterviewQuestionSnapshot;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewHistoryItem;
+import com.ktb.interview.domain.InterviewQuestionSnapshot;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.exception.InterviewSessionInvalidStateException;
 import com.ktb.question.domain.Question;
 import com.ktb.question.domain.QuestionType;

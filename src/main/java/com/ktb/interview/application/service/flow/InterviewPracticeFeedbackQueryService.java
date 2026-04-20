@@ -12,7 +12,7 @@ import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
 import com.ktb.interview.dto.ai.InterviewFeedbackMetricResponse;
 import com.ktb.interview.dto.ai.InterviewKeywordResultResponse;
 import com.ktb.interview.dto.ai.InterviewOverallFeedbackResponse;
-import com.ktb.interview.session.domain.InterviewSessionStatus;
+import com.ktb.interview.domain.InterviewSessionStatus;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

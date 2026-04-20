@@ -1,4 +1,4 @@
-package com.ktb.interview.session.persistence.entity;
+package com.ktb.interview.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -10,18 +10,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 인터뷰 턴 복합키(session_id + turn_order).
+ * 토픽 피드백 복합키(session_id + topic_id).
  */
 @Embeddable
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @EqualsAndHashCode
-public class InterviewTurnId implements Serializable {
+public class InterviewTopicFeedbackId implements Serializable {
 
     @Column(name = "session_id", nullable = false, length = 64)
     private String sessionId;
 
-    @Column(name = "turn_order", nullable = false)
-    private Integer turnOrder;
+    @Column(name = "topic_id", nullable = false)
+    private Integer topicId;
 }

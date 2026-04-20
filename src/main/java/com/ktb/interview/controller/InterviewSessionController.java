@@ -14,7 +14,7 @@ import com.ktb.interview.session.dto.response.SessionFeedbackFailedResponse;
 import com.ktb.interview.session.dto.response.SessionFeedbackPendingResponse;
 import com.ktb.interview.application.InterviewSessionManagementService;
 import com.ktb.interview.application.InterviewSubmissionService;
-import com.ktb.interview.session.domain.InterviewSessionStatus;
+import com.ktb.interview.domain.InterviewSessionStatus;
 import com.ktb.interview.session.exception.InterviewSessionInvalidStateException;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.common.dto.ApiResponse;

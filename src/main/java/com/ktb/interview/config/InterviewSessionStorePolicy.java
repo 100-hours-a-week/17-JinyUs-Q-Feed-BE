@@ -1,4 +1,4 @@
-package com.ktb.interview.session.config;
+package com.ktb.interview.config;
 
 import com.ktb.answer.domain.AnswerType;
 import java.time.Duration;

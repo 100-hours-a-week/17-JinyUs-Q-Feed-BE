@@ -1,6 +1,6 @@
 package com.ktb.interview.session.repository.impl;
 
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.repository.InterviewSessionRepository;
 import java.time.LocalDateTime;
 import java.util.Collection;

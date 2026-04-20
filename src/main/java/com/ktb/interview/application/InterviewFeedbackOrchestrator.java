@@ -2,8 +2,8 @@ package com.ktb.interview.application;
 
 import com.ktb.answer.domain.Answer;
 import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
-import com.ktb.interview.session.domain.InterviewHistoryItem;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewHistoryItem;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.hashtag.domain.QuestionHashtag;
 import com.ktb.question.domain.Question;
 import java.util.List;

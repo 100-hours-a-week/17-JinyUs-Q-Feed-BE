@@ -1,6 +1,6 @@
 package com.ktb.interview.session.service;
 
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.question.domain.QuestionType;
 
 /**
