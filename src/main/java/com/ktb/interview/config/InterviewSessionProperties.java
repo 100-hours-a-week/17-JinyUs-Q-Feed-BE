@@ -1,6 +1,6 @@
 package com.ktb.interview.config;
 
-import com.ktb.interview.session.exception.InterviewSessionInvalidConfigException;
+import com.ktb.interview.exception.InterviewSessionInvalidConfigException;
 import java.time.Duration;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

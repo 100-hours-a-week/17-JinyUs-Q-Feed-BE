@@ -6,11 +6,11 @@ import com.ktb.interview.application.service.flow.InterviewPracticeSubmissionFlo
 import com.ktb.interview.application.service.flow.InterviewRealSubmissionFlowService;
 import com.ktb.interview.application.service.flow.InterviewSessionFinalFeedbackFlowService;
 import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
-import com.ktb.interview.session.dto.request.PracticeAnswerSubmitRequest;
-import com.ktb.interview.session.dto.request.RealAnswerSubmitRequest;
-import com.ktb.interview.session.dto.response.InterviewPracticeSubmitResponse;
-import com.ktb.interview.session.dto.response.InterviewRealSubmitResponse;
-import com.ktb.interview.session.dto.response.InterviewSessionFinalFeedbackResponse;
+import com.ktb.interview.dto.request.PracticeAnswerSubmitRequest;
+import com.ktb.interview.dto.request.RealAnswerSubmitRequest;
+import com.ktb.interview.dto.response.InterviewPracticeSubmitResponse;
+import com.ktb.interview.dto.response.InterviewRealSubmitResponse;
+import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

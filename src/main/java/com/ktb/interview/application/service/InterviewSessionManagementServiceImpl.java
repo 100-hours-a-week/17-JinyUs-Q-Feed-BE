@@ -3,12 +3,12 @@ package com.ktb.interview.application.service;
 import com.ktb.interview.application.InterviewSessionManagementService;
 import com.ktb.interview.application.service.flow.InterviewSessionCreateFlowService;
 import com.ktb.interview.application.service.flow.InterviewSessionFeedbackQueryFlowService;
-import com.ktb.interview.session.dto.request.InterviewSessionCreateRequest;
-import com.ktb.interview.session.dto.response.InterviewSessionCreateResponse;
-import com.ktb.interview.session.dto.response.InterviewSessionFinalFeedbackResponse;
-import com.ktb.interview.session.dto.response.InterviewSessionStateResponse;
-import com.ktb.interview.session.dto.response.SessionFeedbackFailedResponse;
-import com.ktb.interview.session.dto.response.SessionFeedbackPendingResponse;
+import com.ktb.interview.dto.request.InterviewSessionCreateRequest;
+import com.ktb.interview.dto.response.InterviewSessionCreateResponse;
+import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
+import com.ktb.interview.dto.response.InterviewSessionStateResponse;
+import com.ktb.interview.dto.response.SessionFeedbackFailedResponse;
+import com.ktb.interview.dto.response.SessionFeedbackPendingResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -2,7 +2,7 @@ package com.ktb.answer.dto;
 
 import com.ktb.answer.domain.AnswerStatus;
 import com.ktb.answer.domain.AnswerType;
-import com.ktb.interview.session.dto.response.InterviewSessionFinalFeedbackResponse;
+import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
 
 public record AnswerDetailResult(
         Long answerId,

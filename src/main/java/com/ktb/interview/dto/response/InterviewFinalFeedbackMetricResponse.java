@@ -1,4 +1,4 @@
-package com.ktb.interview.session.dto.response;
+package com.ktb.interview.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
