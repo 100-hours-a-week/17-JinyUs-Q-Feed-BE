@@ -24,7 +24,7 @@ import com.ktb.answer.service.AnswerQueryService;
 import com.ktb.answer.service.CursorCodec;
 import com.ktb.hashtag.domain.AnswerHashtag;
 import com.ktb.hashtag.repository.AnswerHashtagRepository;
-import com.ktb.interview.application.service.flow.InterviewSessionFeedbackQueryFlowService;
+import com.ktb.interview.service.impl.flow.InterviewSessionFeedbackQueryFlowService;
 import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
 import com.ktb.interview.exception.InterviewSessionInvalidStateException;
 import com.ktb.metric.domain.AnswerMetric;
