@@ -63,11 +63,14 @@ public class InterviewFeedbackOrchestratorImpl implements InterviewFeedbackOrche
         log.info("generateFeedback - accountId={}, sessionId={}, answerId={}, interviewType={}, historySize={}, hashtagSize={}",
                 accountId, session.getSessionId(), answer.getId(), session.getInterviewType(), history.size(),
                 questionHashtags == null ? 0 : questionHashtags.size());
+
         List<String> keywords = resolveKeywordsForRequest();
         QuestionCategory historyCategory = question.getCategory();
+
         String aiCategory = session.getInterviewType() == AnswerType.REAL_INTERVIEW && historyCategory != null
                 ? toAiCategory(historyCategory.name())
                 : null;
+
         InterviewFeedbackRequest aiRequest = new InterviewFeedbackRequest(
                 accountId,
                 question.getId(),

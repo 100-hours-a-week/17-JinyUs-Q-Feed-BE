@@ -11,7 +11,7 @@ import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.dto.AnswerDetailResult;
 import com.ktb.answer.dto.response.detail.AnswerDetailResponse;
 import com.ktb.answer.exception.AnswerDetailInvalidInputException;
-import com.ktb.answer.service.AnswerDomainService;
+import com.ktb.answer.service.AnswerQueryService;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.common.dto.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,13 +29,13 @@ import org.springframework.http.ResponseEntity;
 class AnswerControllerTest {
 
     @Mock
-    private AnswerDomainService answerDomainService;
+    private AnswerQueryService answerQueryService;
 
     @Test
     @DisplayName("답변 상세 조회에서 쿼리 파라미터가 있으면 INVALID_INPUT 예외를 반환한다")
     void getAnswerDetail_WithQueryParams_ShouldThrowInvalidInput() {
         // Given
-        AnswerController controller = new AnswerController(answerDomainService);
+        AnswerController controller = new AnswerController(answerQueryService);
         SecurityUserAccount principal = new SecurityUserAccount(1L, "tester", List.of("ROLE_USER"));
 
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -44,14 +44,14 @@ class AnswerControllerTest {
         // When & Then
         assertThatThrownBy(() -> controller.getAnswerDetail(principal, 100L, request))
                 .isInstanceOf(AnswerDetailInvalidInputException.class);
-        verifyNoInteractions(answerDomainService);
+        verifyNoInteractions(answerQueryService);
     }
 
     @Test
     @DisplayName("답변 상세 조회에서 쿼리 파라미터가 없으면 상세 응답을 반환한다")
     void getAnswerDetail_WithoutQueryParams_ShouldReturnDetail() {
         // Given
-        AnswerController controller = new AnswerController(answerDomainService);
+        AnswerController controller = new AnswerController(answerQueryService);
         SecurityUserAccount principal = new SecurityUserAccount(1L, "tester", List.of("ROLE_USER"));
 
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -67,13 +67,13 @@ class AnswerControllerTest {
                 null,
                 null
         );
-        when(answerDomainService.getDetail(1L, 100L)).thenReturn(result);
+        when(answerQueryService.getDetail(1L, 100L)).thenReturn(result);
 
         // When
         ResponseEntity<ApiResponse<AnswerDetailResponse>> response = controller.getAnswerDetail(principal, 100L, request);
 
         // Then
-        verify(answerDomainService).getDetail(1L, 100L);
+        verify(answerQueryService).getDetail(1L, 100L);
         org.assertj.core.api.Assertions.assertThat(response.getBody()).isNotNull();
         org.assertj.core.api.Assertions.assertThat(response.getBody().data()).isNotNull();
         org.assertj.core.api.Assertions.assertThat(response.getBody().data().answerId()).isEqualTo(100L);

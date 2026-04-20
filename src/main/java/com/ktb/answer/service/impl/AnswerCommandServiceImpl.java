@@ -8,8 +8,7 @@ import com.ktb.answer.exception.AnswerInvalidContentException;
 import com.ktb.answer.exception.DuplicateAnswerException;
 import com.ktb.answer.exception.InvalidAnswerContentException;
 import com.ktb.answer.exception.InvalidAnswerStatusTransitionException;
-import com.ktb.answer.repository.AnswerRepository;
-import com.ktb.answer.service.AnswerDomainService;
+import com.ktb.answer.service.AnswerCommandService;
 import com.ktb.auth.domain.UserAccount;
 import com.ktb.auth.exception.account.AccountNotFoundException;
 import com.ktb.auth.repository.UserAccountRepository;
@@ -23,25 +22,23 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AnswerDomainServiceImpl implements AnswerDomainService {
+public class AnswerCommandServiceImpl implements AnswerCommandService {
 
     private static final int MAX_ANSWER_CONTENT_LENGTH = 1_500;
 
     private final QuestionRepository questionRepository;
     private final UserAccountRepository userAccountRepository;
-    private final AnswerRepository answerRepository;
 
     @Override
-    public Answer createAnswer(Long accountId, Long questionId, String answerContent, AnswerType type) {
+    public Answer create(Long accountId, Long questionId, String content, AnswerType type) {
         log.debug("Creating answer - accountId={}, questionId={}", accountId, questionId);
 
         UserAccount account = userAccountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId));
-
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
 
-        return Answer.create(question, account, answerContent, type);
+        return Answer.create(question, account, content, type);
     }
 
     @Override
@@ -63,13 +60,13 @@ public class AnswerDomainServiceImpl implements AnswerDomainService {
     }
 
     @Override
-    public void checkDuplicateAnswer(String sessionId, Long questionId) throws DuplicateAnswerException {
+    public void checkDuplicate(String sessionId, Long questionId) throws DuplicateAnswerException {
         log.debug("Checking duplicate answer - sessionId={}, questionId={}", sessionId, questionId);
         // TODO: ANSWER_SESSION 엔티티 구현 후 활성화
     }
 
     @Override
-    public void validateAnswerContent(String answerText) throws InvalidAnswerContentException {
+    public void validateContent(String answerText) {
         log.debug("Validating answer content - hasText={}", answerText != null && !answerText.isBlank());
 
         boolean hasText = answerText != null && !answerText.isBlank();
