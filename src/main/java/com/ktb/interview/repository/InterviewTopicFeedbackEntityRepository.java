@@ -1,4 +1,4 @@
-package com.ktb.interview.session.persistence.repository;
+package com.ktb.interview.repository;
 
 import com.ktb.interview.domain.entity.InterviewTopicFeedbackEntity;
 import com.ktb.interview.domain.entity.InterviewTopicFeedbackId;

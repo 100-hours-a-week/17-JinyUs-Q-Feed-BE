@@ -1,4 +1,4 @@
-package com.ktb.interview.session.persistence.repository.projection;
+package com.ktb.interview.repository.projection;
 
 import java.math.BigDecimal;
 

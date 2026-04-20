@@ -1,7 +1,7 @@
-package com.ktb.interview.session.persistence.repository;
+package com.ktb.interview.repository;
 
 import com.ktb.interview.domain.entity.InterviewSessionEntity;
-import com.ktb.interview.session.persistence.repository.projection.InterviewSessionFinalFeedbackReadModel;
+import com.ktb.interview.repository.projection.InterviewSessionFinalFeedbackReadModel;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

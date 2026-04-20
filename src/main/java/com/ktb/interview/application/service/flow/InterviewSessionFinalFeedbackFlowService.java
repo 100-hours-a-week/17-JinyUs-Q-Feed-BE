@@ -14,7 +14,7 @@ import com.ktb.interview.dto.response.InterviewSessionFinalFeedbackResponse;
 import com.ktb.interview.exception.InterviewSessionInvalidStateException;
 import com.ktb.interview.session.mapper.InterviewSessionFeedbackMapper;
 import com.ktb.interview.session.persistence.InterviewFinalFeedbackPersistenceService;
-import com.ktb.interview.session.repository.InterviewSessionFeedbackRepository;
+import com.ktb.interview.repository.InterviewSessionFeedbackRepository;
 import com.ktb.interview.session.service.InterviewSessionService;
 import com.ktb.interview.validator.InterviewSubmissionValidator;
 import com.ktb.question.domain.Question;
