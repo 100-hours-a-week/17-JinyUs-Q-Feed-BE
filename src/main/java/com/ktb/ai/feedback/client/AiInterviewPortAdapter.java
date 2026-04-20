@@ -6,7 +6,7 @@ import com.ktb.interview.dto.ai.InterviewFeedbackApiResponse;
 import com.ktb.interview.dto.ai.InterviewFeedbackRequest;
 import com.ktb.interview.dto.ai.InterviewFollowUpQuestionApiResponse;
 import com.ktb.interview.dto.ai.InterviewFollowUpQuestionRequest;
-import com.ktb.interview.port.out.AiInterviewPort;
+import com.ktb.interview.client.AiInterviewPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
