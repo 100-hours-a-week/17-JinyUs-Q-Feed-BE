@@ -5,7 +5,7 @@ import com.ktb.answer.dto.request.AnswerListRequest;
 import com.ktb.answer.dto.response.detail.AnswerDetailResponse;
 import com.ktb.answer.dto.response.list.AnswerListResponse;
 import com.ktb.answer.exception.AnswerDetailInvalidInputException;
-import com.ktb.answer.service.AnswerDomainService;
+import com.ktb.answer.service.AnswerQueryService;
 import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 public class AnswerController {
 
-    private final AnswerDomainService answerDomainService;
+    private final AnswerQueryService answerQueryService;
 
     private static final String MESSAGE_ANSWER_LIST_RETRIEVED = "learning_records_retrieval_success";
     private static final String MESSAGE_ANSWER_DETAIL_RETRIEVED = "record_retrieval_success";
@@ -54,7 +54,7 @@ public class AnswerController {
     ) {
         Long accountId = principal.getAccount().getId();
 
-        AnswerListResponse response = answerDomainService.getList(
+        AnswerListResponse response = answerQueryService.getList(
                 accountId,
                 request.type(),
                 request.category(),
@@ -100,7 +100,7 @@ public class AnswerController {
 
         log.info("GET /api/answers/{} - accountId: {}", answerId, accountId);
 
-        AnswerDetailResult detailResult = answerDomainService.getDetail(accountId, answerId);
+        AnswerDetailResult detailResult = answerQueryService.getDetail(accountId, answerId);
         AnswerDetailResponse response = AnswerDetailResponse.of(detailResult);
 
         return ResponseEntity.ok(

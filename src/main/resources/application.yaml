@@ -149,6 +149,17 @@ springdoc:
     tags-sorter: alpha
     display-request-duration: true
 
+answer:
+  feedback:
+    rabbitmq:
+      enabled: false  # RabbitMQ 기반 비동기 AI 피드백 활성화 여부
+      exchange: answer.direct
+      dlx: answer.dlx
+      queue: answer.feedback-processing
+      dlq: answer.feedback-processing.dlq
+      routing-key: answer.feedback-processing
+      dlq-routing-key: dlq.answer.feedback-processing
+
 abuse:
   guard:
     # Rate Limit

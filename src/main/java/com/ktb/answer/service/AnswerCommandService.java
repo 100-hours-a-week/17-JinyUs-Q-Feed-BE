@@ -10,36 +10,42 @@ import com.ktb.answer.exception.InvalidAnswerStatusTransitionException;
 import com.ktb.auth.exception.account.AccountNotFoundException;
 import com.ktb.question.exception.QuestionNotFoundException;
 
-public interface AnswerDomainService {
+public interface AnswerCommandService {
+
     /**
      * 답변 생성
+     *
      * @return 생성된 Answer 엔티티
-     * @throws AccountNotFoundException     제출한 유저가 존재하지 않을 때(404)
-     * @throws QuestionNotFoundException    제출한 답변의 문제가 존재하지 않을 때(404)
+     * @throws AccountNotFoundException  제출한 유저가 존재하지 않을 때(404)
+     * @throws QuestionNotFoundException 제출한 답변의 문제가 존재하지 않을 때(404)
      */
-    Answer createAnswer(Long accountId, Long questionId, String answerContent, AnswerType type);
+    Answer create(Long accountId, Long questionId, String content, AnswerType type);
 
     /**
      * 답변 소유권 검증
+     *
      * @throws AnswerAccessDeniedException 본인 답변이 아닌 경우
      */
     void validateOwnership(Answer answer, Long accountId) throws AnswerAccessDeniedException;
 
     /**
      * 답변 상태 전이
+     *
      * @throws InvalidAnswerStatusTransitionException 허용되지 않는 상태 전이인 경우
      */
     void transitionStatus(Answer answer, AnswerStatus nextStatus) throws InvalidAnswerStatusTransitionException;
 
     /**
      * 중복 답변 검증 (세션 내 동일 질문)
+     *
      * @throws DuplicateAnswerException 이미 답변이 존재하는 경우
      */
-    void checkDuplicateAnswer(String sessionId, Long questionId) throws DuplicateAnswerException;
+    void checkDuplicate(String sessionId, Long questionId) throws DuplicateAnswerException;
 
     /**
      * 답변 텍스트 유효성 검증
+     *
      * @throws InvalidAnswerContentException 답변 내용이 유효하지 않은 경우
      */
-    void validateAnswerContent(String answerText) throws InvalidAnswerContentException;
+    void validateContent(String answerText) throws InvalidAnswerContentException;
 }
