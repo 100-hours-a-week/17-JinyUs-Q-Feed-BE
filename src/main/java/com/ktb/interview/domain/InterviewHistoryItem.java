@@ -1,4 +1,4 @@
-package com.ktb.interview.session.domain;
+package com.ktb.interview.domain;
 
 import com.ktb.answer.domain.TurnType;
 import com.ktb.question.domain.QuestionCategory;

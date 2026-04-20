@@ -1,4 +1,4 @@
-package com.ktb.interview.session.domain;
+package com.ktb.interview.domain;
 
 import java.util.List;
 

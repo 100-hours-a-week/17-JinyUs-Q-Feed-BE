@@ -1,4 +1,4 @@
-package com.ktb.interview.session.domain;
+package com.ktb.interview.domain;
 
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.domain.TurnType;

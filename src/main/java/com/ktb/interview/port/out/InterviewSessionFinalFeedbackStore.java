@@ -1,7 +1,7 @@
 package com.ktb.interview.port.out;
 
 import com.ktb.interview.dto.ai.InterviewFeedbackDataResponse;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewSession;
 
 /**
  * 최종 AI 피드백 응답 수신 직후 세션 기반 스키마에 결과를 영속화합니다.

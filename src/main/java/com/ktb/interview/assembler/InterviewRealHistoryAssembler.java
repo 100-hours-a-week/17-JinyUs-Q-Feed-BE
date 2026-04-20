@@ -2,9 +2,9 @@ package com.ktb.interview.assembler;
 
 import com.ktb.answer.domain.TurnType;
 import com.ktb.interview.dto.ai.InterviewHistoryRequest;
-import com.ktb.interview.session.domain.InterviewHistoryItem;
-import com.ktb.interview.session.domain.InterviewQuestionSnapshot;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewHistoryItem;
+import com.ktb.interview.domain.InterviewQuestionSnapshot;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.exception.InterviewSessionInvalidInputException;
 import com.ktb.interview.session.exception.InterviewSessionInvalidStateException;
 import com.ktb.question.domain.QuestionCategory;

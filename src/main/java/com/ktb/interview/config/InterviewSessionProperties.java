@@ -1,4 +1,4 @@
-package com.ktb.interview.session.config;
+package com.ktb.interview.config;
 
 import com.ktb.interview.session.exception.InterviewSessionInvalidConfigException;
 import java.time.Duration;

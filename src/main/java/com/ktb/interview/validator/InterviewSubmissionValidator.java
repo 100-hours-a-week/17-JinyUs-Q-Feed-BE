@@ -2,9 +2,9 @@ package com.ktb.interview.validator;
 
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.domain.TurnType;
-import com.ktb.interview.session.domain.InterviewQuestionSnapshot;
-import com.ktb.interview.session.domain.InterviewSession;
-import com.ktb.interview.session.domain.InterviewSessionStatus;
+import com.ktb.interview.domain.InterviewQuestionSnapshot;
+import com.ktb.interview.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewSessionStatus;
 import com.ktb.interview.session.dto.request.RealAnswerSubmitRequest;
 import com.ktb.interview.session.exception.InterviewSessionInvalidInputException;
 import com.ktb.interview.session.exception.InterviewSessionInvalidStateException;

@@ -1,7 +1,7 @@
 package com.ktb.interview.session.persistence.repository;
 
-import com.ktb.interview.session.persistence.entity.InterviewTopicFeedbackEntity;
-import com.ktb.interview.session.persistence.entity.InterviewTopicFeedbackId;
+import com.ktb.interview.domain.entity.InterviewTopicFeedbackEntity;
+import com.ktb.interview.domain.entity.InterviewTopicFeedbackId;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 

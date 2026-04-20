@@ -2,10 +2,10 @@ package com.ktb.interview.application.service.flow;
 
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.domain.TurnType;
-import com.ktb.interview.session.domain.InterviewHistoryItem;
-import com.ktb.interview.session.domain.InterviewQuestionSnapshot;
-import com.ktb.interview.session.domain.InterviewSession;
-import com.ktb.interview.session.domain.InterviewSessionStatus;
+import com.ktb.interview.domain.InterviewHistoryItem;
+import com.ktb.interview.domain.InterviewQuestionSnapshot;
+import com.ktb.interview.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewSessionStatus;
 import com.ktb.interview.session.dto.request.PracticeAnswerSubmitRequest;
 import com.ktb.interview.session.dto.response.InterviewPracticeSubmitResponse;
 import com.ktb.interview.session.service.InterviewSessionService;

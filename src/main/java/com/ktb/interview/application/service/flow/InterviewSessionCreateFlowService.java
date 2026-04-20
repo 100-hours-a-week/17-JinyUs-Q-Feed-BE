@@ -2,8 +2,8 @@ package com.ktb.interview.application.service.flow;
 
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.answer.domain.TurnType;
-import com.ktb.interview.session.domain.InterviewQuestionSnapshot;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.domain.InterviewQuestionSnapshot;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.dto.request.InterviewSessionCreateRequest;
 import com.ktb.interview.session.dto.response.InterviewSessionCreateResponse;
 import com.ktb.interview.session.exception.InterviewSessionInvalidInputException;

@@ -2,8 +2,8 @@ package com.ktb.interview.session.service.impl;
 
 import com.ktb.answer.domain.AnswerType;
 import com.ktb.interview.session.InterviewSessionIdProvider;
-import com.ktb.interview.session.config.InterviewSessionProperties;
-import com.ktb.interview.session.domain.InterviewSession;
+import com.ktb.interview.config.InterviewSessionProperties;
+import com.ktb.interview.domain.InterviewSession;
 import com.ktb.interview.session.exception.InterviewSessionAccessDeniedException;
 import com.ktb.interview.session.exception.InterviewSessionExpiredException;
 import com.ktb.interview.session.exception.InterviewSessionNotFoundException;

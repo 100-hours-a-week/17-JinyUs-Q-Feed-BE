@@ -1,4 +1,4 @@
-package com.ktb.interview.session.persistence.entity;
+package com.ktb.interview.domain.entity;
 
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
