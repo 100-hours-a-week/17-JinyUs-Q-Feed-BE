@@ -10,8 +10,8 @@ public class AbstractRedisContainerTest {
 
     @SuppressWarnings("resource")
     private static final GenericContainer<?> REDIS =
-            new GenericContainer<>("redis:7-alpine")
-                    .withExposedPorts(6379);
+        new GenericContainer<>("redis:7-alpine")
+            .withExposedPorts(6379);
 
     static {
         REDIS.start();
