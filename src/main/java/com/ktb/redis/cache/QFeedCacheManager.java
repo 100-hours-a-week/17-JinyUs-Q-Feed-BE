@@ -38,6 +38,6 @@ public class QFeedCacheManager extends AbstractTransactionSupportingCacheManager
         if (policy.isHotKey()) {
             return new JitterPERRedisCache(policy.getCacheName(), cacheWriter, config, connectionFactory, ttl);
         }
-        return new LuaRedisCache(policy.getCacheName(), cacheWriter, config, connectionFactory, ttl);
+        return new ScriptableRedisCache(policy.getCacheName(), cacheWriter, config, connectionFactory, ttl);
     }
 }

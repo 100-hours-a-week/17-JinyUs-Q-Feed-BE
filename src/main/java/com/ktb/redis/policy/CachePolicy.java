@@ -14,7 +14,8 @@ public enum CachePolicy {
     QUESTION_KEYWORDS  (CacheNames.QUESTION_KEYWORDS,   CacheTtl.LONG,   false),
     QUESTION_DAILY_REC (CacheNames.QUESTION_DAILY_RECOMMENDATION, CacheTtl.LONG, true),
     METRIC_LIST        (CacheNames.METRIC_LIST,         CacheTtl.MEDIUM, false),
-    METRIC_DETAIL      (CacheNames.METRIC_DETAIL,       CacheTtl.LONG,   false);
+    METRIC_DETAIL      (CacheNames.METRIC_DETAIL,       CacheTtl.LONG,   false),
+    TOKEN_FAMILY       (CacheNames.TOKEN_FAMILY,        CacheTtl.SHORT,  false);
 
     private final String cacheName;
     private final CacheTtl ttl;

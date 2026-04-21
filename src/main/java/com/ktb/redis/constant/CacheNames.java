@@ -9,6 +9,7 @@ public final class CacheNames {
     public static final String QUESTION_DAILY_RECOMMENDATION = "question:daily-recommendation";
     public static final String METRIC_LIST = "metric:list";
     public static final String METRIC_DETAIL = "metric:detail";
+    public static final String TOKEN_FAMILY = "auth:family";
 
     private CacheNames() {
     }

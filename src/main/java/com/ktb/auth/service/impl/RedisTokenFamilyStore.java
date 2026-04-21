@@ -3,14 +3,15 @@ package com.ktb.auth.service.impl;
 import com.ktb.auth.domain.RevokeReason;
 import com.ktb.auth.dto.TokenFamilyInfo;
 import com.ktb.auth.service.TokenFamilyStore;
-import java.time.Duration;
+import com.ktb.redis.cache.ScriptableRedisCache;
+import com.ktb.redis.constant.CacheNames;
 import java.util.List;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +19,11 @@ import org.springframework.stereotype.Service;
  * Redis 기반 Token Family State Store
  * <p>
  * 전략: DB SoT(TokenFamily 유효성) + Redis fast path(hash CAS)
- * - initFamilyState: DB RefreshToken write + Redis HASH write
+ * - initFamilyState: DB RefreshToken write + Redis HASH write (Lua 원자적 초기화)
  * - rotateFamilyToken: Redis Lua CAS only; 재사용 시 DB revoke
  * - revoke*: Redis HASH(존재 시만) + DB revoke
  * <p>
- * Key: auth:family:{familyUuid}  (HASH)
+ * Key: auth:family::{familyUuid}  (HASH, Spring Cache prefix 포함)
  * Fields:
  *   currentHash  → SHA256(현재 유효한 refresh token)
  *   revoked      → "0" | "1"
@@ -32,14 +33,17 @@ import org.springframework.stereotype.Service;
 @Service
 @Primary
 @Profile("redis")
-@RequiredArgsConstructor
 public class RedisTokenFamilyStore implements TokenFamilyStore {
 
-    private static final String KEY_PREFIX = "auth:family:";
-    private static final String FIELD_CURRENT_HASH = "currentHash";
-    private static final String FIELD_REVOKED = "revoked";
-    private static final String REVOKED_FALSE = "0";
-    private static final String REVOKED_TRUE = "1";
+    /**
+     * 원자적 Hash 초기화 — currentHash + revoked=0 설정 후 TTL 적용
+     */
+    private static final RedisScript<Object> INIT_SCRIPT = RedisScript.of(
+        "redis.call('HSET', KEYS[1], 'currentHash', ARGV[1], 'revoked', '0')\n"
+        + "redis.call('PEXPIRE', KEYS[1], ARGV[2])\n"
+        + "return nil",
+        Object.class
+    );
 
     /**
      * 원자적 RTR Rotate (compare-and-swap)
@@ -73,8 +77,19 @@ public class RedisTokenFamilyStore implements TokenFamilyStore {
         Long.class
     );
 
+    private final ScriptableRedisCache tokenFamilyCache;
     private final JpaTokenFamilyStore jpaStore;
-    private final StringRedisTemplate redisTemplate;
+
+    public RedisTokenFamilyStore(CacheManager cacheManager, JpaTokenFamilyStore jpaStore) {
+        var cache = cacheManager.getCache(CacheNames.TOKEN_FAMILY);
+        if (!(cache instanceof ScriptableRedisCache)) {
+            throw new IllegalStateException(
+                    "TOKEN_FAMILY cache must be ScriptableRedisCache, but was: "
+                    + (cache == null ? "null" : cache.getClass().getSimpleName()));
+        }
+        this.tokenFamilyCache = (ScriptableRedisCache) cache;
+        this.jpaStore = jpaStore;
+    }
 
     @Override
     public Optional<TokenFamilyInfo> findByUuid(String uuid) {
@@ -84,21 +99,15 @@ public class RedisTokenFamilyStore implements TokenFamilyStore {
     @Override
     public void initFamilyState(String familyUuid, String tokenHash, long ttlMillis) {
         jpaStore.initFamilyState(familyUuid, tokenHash, ttlMillis);
-
-        String key = familyKey(familyUuid);
-        redisTemplate.opsForHash().put(key, FIELD_CURRENT_HASH, tokenHash);
-        redisTemplate.opsForHash().put(key, FIELD_REVOKED, REVOKED_FALSE);
-        redisTemplate.expire(key, Duration.ofMillis(ttlMillis));
+        tokenFamilyCache.execute(INIT_SCRIPT, ReturnType.VALUE, familyUuid,
+                tokenHash, String.valueOf(ttlMillis));
         log.debug("Family 초기 상태 등록: familyUuid={}", familyUuid);
     }
 
     @Override
     public int rotateFamilyToken(String familyUuid, String oldHash, String newHash, long ttlMillis) {
-        Long result = redisTemplate.execute(
-            ROTATE_SCRIPT,
-            List.of(familyKey(familyUuid)),
-            oldHash, newHash, String.valueOf(ttlMillis)
-        );
+        Long result = tokenFamilyCache.execute(ROTATE_SCRIPT, ReturnType.INTEGER, familyUuid,
+                oldHash, newHash, String.valueOf(ttlMillis));
         int code = (result != null) ? result.intValue() : -1;
 
         if (code == -3) {
@@ -110,7 +119,7 @@ public class RedisTokenFamilyStore implements TokenFamilyStore {
 
     @Override
     public void revokeFamilyState(String familyUuid, RevokeReason reason) {
-        redisTemplate.execute(REVOKE_IF_EXISTS_SCRIPT, List.of(familyKey(familyUuid)));
+        tokenFamilyCache.execute(REVOKE_IF_EXISTS_SCRIPT, ReturnType.INTEGER, familyUuid);
         jpaStore.revokeFamilyState(familyUuid, reason);
         log.debug("Family 폐기: familyUuid={}, reason={}", familyUuid, reason);
     }
@@ -119,12 +128,8 @@ public class RedisTokenFamilyStore implements TokenFamilyStore {
     public int revokeAllFamilyStates(Long accountId, RevokeReason reason) {
         List<String> activeUuids = jpaStore.findActiveUuids(accountId);
         activeUuids.forEach(uuid ->
-            redisTemplate.execute(REVOKE_IF_EXISTS_SCRIPT, List.of(familyKey(uuid)))
+                tokenFamilyCache.execute(REVOKE_IF_EXISTS_SCRIPT, ReturnType.INTEGER, uuid)
         );
         return jpaStore.revokeAllFamilyStates(accountId, reason);
-    }
-
-    private String familyKey(String familyUuid) {
-        return KEY_PREFIX + familyUuid;
     }
 }
