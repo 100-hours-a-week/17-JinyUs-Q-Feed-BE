@@ -3,6 +3,7 @@ package com.ktb.redis;
 import com.ktb.fixture.RedisFixture;
 import com.ktb.redis.config.RedisCacheConfig;
 import com.ktb.redis.config.RedisSerializationConfig;
+import com.ktb.redis.constant.CacheNames;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,9 +36,10 @@ public class RedisCacheManagerTest extends AbstractRedisContainerTest{
 
     @Test
     void cache_manager_should_store_and_get_value() {
-        Cache cache = cacheManager.getCache("questionList");
+        Cache cache = cacheManager.getCache(CacheNames.QUESTION_LIST);
         RedisFixture.RedisTestUser user = RedisFixture.createTestUser();
 
+        assertThat(cache).isNotNull();
         cache.put("test:user:1", user);
 
         RedisFixture.RedisTestUser cached = cache.get("test:user:1", RedisFixture.RedisTestUser.class);
