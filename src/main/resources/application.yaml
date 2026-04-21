@@ -84,7 +84,7 @@ cors:
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration: 600000  # 10분 (ms)
-  refresh-token-expiration: 1209600000  # 14일 (ms)
+  refresh-token-expiration: 300000   # 5분 (ms)
 
 aws:
   region: ${AWS_REGION}
