@@ -24,6 +24,7 @@ import com.ktb.question.exception.QuestionNotFoundException;
 import com.ktb.question.exception.SearchKeywordTooShortException;
 import com.ktb.question.repository.QuestionRepository;
 import com.ktb.question.service.QuestionService;
+import com.ktb.redis.constant.CacheNames;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +38,9 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Slice;
@@ -60,6 +64,7 @@ public class QuestionServiceImpl implements QuestionService {
     private final HashtagRepository hashtagRepository;
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_LIST, key = "#category+':'+#type+':'+#cursor+':'+#size")
     public QuestionListResponse getQuestions(QuestionCategory category, QuestionType type, Long cursor, int size) {
         log.debug("getQuestions - type: {}, category: {}, cursor: {}, size: {}",
                 type, category, cursor, size);
@@ -77,6 +82,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_DETAIL, key = "#questionId")
     public QuestionDetailResponse getQuestionDetail(Long questionId) {
         log.debug("getQuestionDetail - questionId: {}", questionId);
         Question question = questionRepository.findById(questionId)
@@ -107,6 +113,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION)
     public QuestionDetailResponse getDailyRecommendation() {
         log.debug("getDailyRecommendation");
         Long questionId = questionRepository.findRandomActiveId()
@@ -122,6 +129,7 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true)
     public QuestionDetailResponse createQuestion(QuestionCreateRequest request) {
         int keywordCount = request.keywords() == null ? 0 : request.keywords().size();
         log.info("createQuestion - type: {}, category: {}, keywordCount: {}",
@@ -136,6 +144,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DETAIL, key = "#questionId"),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_KEYWORDS, key = "#questionId"),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION, allEntries = true)
+    })
     public QuestionDetailResponse updateQuestion(Long questionId, QuestionUpdateRequest request) {
         int keywordCount = request.keywords() == null ? 0 : request.keywords().size();
         log.info("updateQuestion - questionId: {}, hasContent: {}, type: {}, category: {}, useYn: {}, keywordCount: {}",
@@ -169,6 +183,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DETAIL, key = "#questionId"),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_KEYWORDS, key = "#questionId"),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION, allEntries = true)
+    })
     public void deleteQuestion(Long questionId) {
         log.info("deleteQuestion - questionId: {}", questionId);
         Question question = questionRepository.findById(questionId)
@@ -183,6 +203,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_KEYWORDS, key = "#questionId")
     public QuestionKeywordListResponse getQuestionKeywords(Long questionId) {
         log.debug("getQuestionKeywords - questionId: {}", questionId);
         validateQuestionExists(questionId);
@@ -217,6 +238,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_CATEGORIES)
     public QuestionCategoryListResponse getQuestionCategories() {
         log.debug("getQuestionCategories");
         Map<String, Map<String, String>> categories = EXPOSED_TYPES.stream()
@@ -238,6 +260,7 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.QUESTION_TYPES)
     public QuestionTypeListResponse getQuestionTypes() {
         log.debug("getQuestionTypes");
         Map<String, String> types = Arrays.stream(QuestionType.values())

@@ -10,8 +10,12 @@ import com.ktb.metric.dto.MetricUpdateRequest;
 import com.ktb.metric.exception.MetricNotFoundException;
 import com.ktb.metric.repository.MetricRepository;
 import com.ktb.metric.service.MetricService;
+import com.ktb.redis.constant.CacheNames;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Slice;
@@ -26,6 +30,7 @@ public class MetricServiceImpl implements MetricService {
     private final MetricRepository metricRepository;
 
     @Override
+    @Cacheable(cacheNames = CacheNames.METRIC_LIST, key = "#useYn+':'+#cursor+':'+#size")
     public MetricListResponse getMetrics(Boolean useYn, Long cursor, int size) {
         PageRequest pageable = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "id"));
         Slice<Metric> metrics = findMetrics(useYn, cursor, pageable);
@@ -38,6 +43,7 @@ public class MetricServiceImpl implements MetricService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheNames.METRIC_DETAIL, key = "#metricId")
     public MetricDetailResponse getMetric(Long metricId) {
         Metric metric = metricRepository.findById(metricId)
                 .orElseThrow(() -> new MetricNotFoundException(metricId));
@@ -46,6 +52,7 @@ public class MetricServiceImpl implements MetricService {
 
     @Override
     @Transactional
+    @CacheEvict(cacheNames = CacheNames.METRIC_LIST, allEntries = true)
     public MetricDetailResponse createMetric(MetricCreateRequest request) {
         Metric metric = Metric.create(request.name(), request.description());
         Metric saved = metricRepository.save(metric);
@@ -54,6 +61,10 @@ public class MetricServiceImpl implements MetricService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.METRIC_DETAIL, key = "#metricId"),
+        @CacheEvict(cacheNames = CacheNames.METRIC_LIST, allEntries = true)
+    })
     public MetricDetailResponse updateMetric(Long metricId, MetricUpdateRequest request) {
         Metric metric = metricRepository.findById(metricId)
                 .orElseThrow(() -> new MetricNotFoundException(metricId));
@@ -77,6 +88,10 @@ public class MetricServiceImpl implements MetricService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.METRIC_DETAIL, key = "#metricId"),
+        @CacheEvict(cacheNames = CacheNames.METRIC_LIST, allEntries = true)
+    })
     public void deleteMetric(Long metricId) {
         Metric metric = metricRepository.findById(metricId)
                 .orElseThrow(() -> new MetricNotFoundException(metricId));
