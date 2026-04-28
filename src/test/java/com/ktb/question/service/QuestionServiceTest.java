@@ -35,6 +35,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Set;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -55,6 +57,15 @@ class QuestionServiceTest {
 
     @Mock
     private HashtagRepository hashtagRepository;
+
+    @Mock
+    private DailyRecommendationCandidateService candidateService;
+
+    @Mock
+    private DailyRecommendationAnswerTracker tracker;
+
+    @Mock
+    private DailyRecommendationProperties properties;
 
     @InjectMocks
     private QuestionServiceImpl questionService;
@@ -217,10 +228,13 @@ class QuestionServiceTest {
         @DisplayName("오늘의 추천 질문 조회 시 활성 질문이 없으면 QuestionNotFoundException")
         void getDailyRecommendation_WithoutActiveQuestion_ShouldThrowException() {
             // Given
-            when(questionRepository.findRandomActiveId()).thenReturn(Optional.empty());
+            Long accountId = 1L;
+            when(candidateService.getCandidateIds(any())).thenReturn(List.of());
+            when(tracker.getAnsweredIds(eq(accountId), any())).thenReturn(Set.of());
+            when(candidateService.getFreshCandidateIds()).thenReturn(List.of());
 
             // When & Then
-            assertThatThrownBy(() -> questionService.getDailyRecommendation())
+            assertThatThrownBy(() -> questionService.getDailyRecommendation(accountId))
                     .isInstanceOf(QuestionNotFoundException.class);
         }
 
@@ -228,11 +242,13 @@ class QuestionServiceTest {
         @DisplayName("오늘의 추천 질문 ID는 있으나 상세 조회 실패 시 QuestionNotFoundException")
         void getDailyRecommendation_WithMissingQuestionDetail_ShouldThrowException() {
             // Given
-            when(questionRepository.findRandomActiveId()).thenReturn(Optional.of(123L));
+            Long accountId = 1L;
+            when(candidateService.getCandidateIds(any())).thenReturn(List.of(123L));
+            when(tracker.getAnsweredIds(eq(accountId), any())).thenReturn(java.util.Set.of());
             when(questionRepository.findById(123L)).thenReturn(Optional.empty());
 
             // When & Then
-            assertThatThrownBy(() -> questionService.getDailyRecommendation())
+            assertThatThrownBy(() -> questionService.getDailyRecommendation(accountId))
                     .isInstanceOf(QuestionNotFoundException.class);
         }
 

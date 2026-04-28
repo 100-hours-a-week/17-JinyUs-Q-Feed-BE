@@ -1,5 +1,6 @@
 package com.ktb.question.controller;
 
+import com.ktb.auth.security.adapter.SecurityUserAccount;
 import com.ktb.common.dto.ApiResponse;
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
@@ -27,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -159,11 +161,14 @@ public class QuestionController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "질문 없음",
                     content = @Content(schema = @Schema(implementation = com.ktb.common.dto.CommonErrorResponse.class)))
     })
-    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getDailyRecommendation() {
-        log.info("GET /api/questions/recommendation");
-        QuestionDetailResponse result = questionService.getDailyRecommendation();
-        log.info("GET /api/questions/recommendation success - questionId: {}, type: {}, category: {}",
-                result.questionId(), result.type(), result.category());
+    public ResponseEntity<ApiResponse<QuestionDetailResponse>> getDailyRecommendation(
+            @AuthenticationPrincipal SecurityUserAccount principal
+    ) {
+        Long accountId = principal.getAccount().getId();
+        log.info("GET /api/questions/recommendation - accountId: {}", accountId);
+        QuestionDetailResponse result = questionService.getDailyRecommendation(accountId);
+        log.info("GET /api/questions/recommendation success - accountId: {}, questionId: {}, type: {}, category: {}",
+                accountId, result.questionId(), result.type(), result.category());
         return ResponseEntity.ok(new ApiResponse<>("question_recommendation_success", result));
     }
 

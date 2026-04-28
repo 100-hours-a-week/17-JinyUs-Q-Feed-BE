@@ -149,6 +149,10 @@ springdoc:
     tags-sorter: alpha
     display-request-duration: true
 
+question:
+  recommendation:
+    candidate-count: 10
+
 answer:
   feedback:
     rabbitmq:

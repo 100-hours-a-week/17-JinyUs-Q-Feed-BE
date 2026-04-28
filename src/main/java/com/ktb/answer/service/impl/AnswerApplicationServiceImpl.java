@@ -40,6 +40,8 @@ import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
 import com.ktb.question.exception.QuestionDisabledException;
 import com.ktb.question.exception.QuestionNotFoundException;
+import com.ktb.question.service.DailyRecommendationAnswerTracker;
+import com.ktb.question.service.DailyRecommendationCandidateService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,8 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
     private final AbuseGuard abuseGuard;
     private final AnswerFeedbackProperties answerFeedbackProperties;
     private final NotificationOutboxRepository notificationOutboxRepository;
+    private final DailyRecommendationCandidateService candidateService;
+    private final DailyRecommendationAnswerTracker tracker;
 
     @Override
     public AnswerListResponse getList(
@@ -117,6 +121,12 @@ public class AnswerApplicationServiceImpl implements AnswerApplicationService {
             log.info("Answer saved without AI feedback - accountId={}, reason={}",
                     accountId, abuseResult.getReason());
             return AnswerSubmitResult.noAiFeedback(answer.getId(), immediateFeedback);
+        }
+
+        if (candidateService.isCandidateToday(command.questionId())) {
+            tracker.recordAnswer(accountId, command.questionId(), LocalDate.now());
+            log.debug("Daily recommendation answered recorded - accountId={}, questionId={}",
+                    accountId, command.questionId());
         }
 
         if (answerFeedbackProperties.isEnabled()) {

@@ -18,7 +18,7 @@ public interface QuestionService {
 
     void deleteQuestion(Long questionId);
 
-    QuestionDetailResponse getDailyRecommendation();
+    QuestionDetailResponse getDailyRecommendation(Long accountId);
 
     QuestionKeywordListResponse getQuestionKeywords(Long questionId);
 
