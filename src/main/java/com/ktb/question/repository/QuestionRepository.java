@@ -3,6 +3,7 @@ package com.ktb.question.repository;
 import com.ktb.question.domain.Question;
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -103,4 +104,12 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             @Param("questionType") String questionType,
             @Param("category") String category
     );
+
+    @Query(value = """
+            SELECT question_id FROM question
+            WHERE use_yn = true AND deleted_at IS NULL
+            ORDER BY random()
+            LIMIT :count
+            """, nativeQuery = true)
+    List<Long> findRandomActiveCandidateIds(@Param("count") int count);
 }

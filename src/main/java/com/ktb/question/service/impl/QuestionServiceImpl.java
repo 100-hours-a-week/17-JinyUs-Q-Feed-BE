@@ -23,9 +23,12 @@ import com.ktb.question.dto.QuestionUpdateRequest;
 import com.ktb.question.exception.QuestionNotFoundException;
 import com.ktb.question.exception.SearchKeywordTooShortException;
 import com.ktb.question.repository.QuestionRepository;
+import com.ktb.question.service.DailyRecommendationAnswerTracker;
+import com.ktb.question.service.DailyRecommendationCandidateService;
 import com.ktb.question.service.QuestionService;
 import com.ktb.redis.constant.CacheNames;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -62,6 +65,8 @@ public class QuestionServiceImpl implements QuestionService {
     private final QuestionRepository questionRepository;
     private final QuestionHashtagRepository questionHashtagRepository;
     private final HashtagRepository hashtagRepository;
+    private final DailyRecommendationCandidateService candidateService;
+    private final DailyRecommendationAnswerTracker tracker;
 
     @Override
     @Cacheable(cacheNames = CacheNames.QUESTION_LIST, key = "#category+':'+#type+':'+#cursor+':'+#size")
@@ -113,23 +118,39 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    @Cacheable(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION)
-    public QuestionDetailResponse getDailyRecommendation() {
-        log.debug("getDailyRecommendation");
-        Long questionId = questionRepository.findRandomActiveId()
-                .orElseThrow(() -> new QuestionNotFoundException(0L));
+    public QuestionDetailResponse getDailyRecommendation(Long accountId) {
+        log.debug("getDailyRecommendation - accountId: {}", accountId);
+        LocalDate today = LocalDate.now();
+        List<Long> candidates = candidateService.getCandidateIds(today);
+        Set<Long> answered = tracker.getAnsweredIds(accountId, today);
 
-        Question question = questionRepository.findById(questionId)
-                .orElseThrow(() -> new QuestionNotFoundException(questionId));
+        Long selectedId = candidates.stream()
+                .filter(id -> !answered.contains(id))
+                .findFirst()
+                .orElseGet(() -> fallbackCandidateId(answered));
 
-        log.info("getDailyRecommendation success - questionId: {}, type: {}, category: {}",
-                question.getId(), question.getType(), question.getCategory());
+        Question question = questionRepository.findById(selectedId)
+                .orElseThrow(() -> new QuestionNotFoundException(selectedId));
+
+        log.info("getDailyRecommendation success - accountId: {}, questionId: {}, type: {}, category: {}",
+                accountId, question.getId(), question.getType(), question.getCategory());
         return toDetailResponse(question);
+    }
+
+    private Long fallbackCandidateId(Set<Long> answered) {
+        return candidateService.getFreshCandidateIds()
+                .stream()
+                .filter(id -> !answered.contains(id))
+                .findFirst()
+                .orElseThrow(() -> new QuestionNotFoundException(0L));
     }
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true),
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION_CANDIDATES, allEntries = true)
+    })
     public QuestionDetailResponse createQuestion(QuestionCreateRequest request) {
         int keywordCount = request.keywords() == null ? 0 : request.keywords().size();
         log.info("createQuestion - type: {}, category: {}, keywordCount: {}",
@@ -148,7 +169,7 @@ public class QuestionServiceImpl implements QuestionService {
         @CacheEvict(cacheNames = CacheNames.QUESTION_DETAIL, key = "#questionId"),
         @CacheEvict(cacheNames = CacheNames.QUESTION_KEYWORDS, key = "#questionId"),
         @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true),
-        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION, allEntries = true)
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION_CANDIDATES, allEntries = true)
     })
     public QuestionDetailResponse updateQuestion(Long questionId, QuestionUpdateRequest request) {
         int keywordCount = request.keywords() == null ? 0 : request.keywords().size();
@@ -187,7 +208,7 @@ public class QuestionServiceImpl implements QuestionService {
         @CacheEvict(cacheNames = CacheNames.QUESTION_DETAIL, key = "#questionId"),
         @CacheEvict(cacheNames = CacheNames.QUESTION_KEYWORDS, key = "#questionId"),
         @CacheEvict(cacheNames = CacheNames.QUESTION_LIST, allEntries = true),
-        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION, allEntries = true)
+        @CacheEvict(cacheNames = CacheNames.QUESTION_DAILY_RECOMMENDATION_CANDIDATES, allEntries = true)
     })
     public void deleteQuestion(Long questionId) {
         log.info("deleteQuestion - questionId: {}", questionId);

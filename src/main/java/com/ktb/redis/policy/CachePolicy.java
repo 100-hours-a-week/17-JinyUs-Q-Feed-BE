@@ -12,7 +12,7 @@ public enum CachePolicy {
     QUESTION_LIST      (CacheNames.QUESTION_LIST,       CacheTtl.MEDIUM, false),
     QUESTION_DETAIL    (CacheNames.QUESTION_DETAIL,     CacheTtl.LONG,   false),
     QUESTION_KEYWORDS  (CacheNames.QUESTION_KEYWORDS,   CacheTtl.LONG,   false),
-    QUESTION_DAILY_REC (CacheNames.QUESTION_DAILY_RECOMMENDATION, CacheTtl.LONG, true),
+    QUESTION_DAILY_REC (CacheNames.QUESTION_DAILY_RECOMMENDATION_CANDIDATES, CacheTtl.DAILY, true),
     METRIC_LIST        (CacheNames.METRIC_LIST,         CacheTtl.MEDIUM, false),
     METRIC_DETAIL      (CacheNames.METRIC_DETAIL,       CacheTtl.LONG,   false);
 

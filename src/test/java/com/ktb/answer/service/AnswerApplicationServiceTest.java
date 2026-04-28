@@ -29,6 +29,8 @@ import com.ktb.metric.domain.AnswerMetric;
 import com.ktb.metric.repository.AnswerMetricRepository;
 import com.ktb.notification.repository.NotificationOutboxRepository;
 import com.ktb.question.domain.Question;
+import com.ktb.question.service.DailyRecommendationAnswerTracker;
+import com.ktb.question.service.DailyRecommendationCandidateService;
 import com.ktb.question.domain.QuestionCategory;
 import com.ktb.question.domain.QuestionType;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +93,12 @@ class AnswerApplicationServiceTest {
     @Mock
     private NotificationOutboxRepository notificationOutboxRepository;
 
+    @Mock
+    private DailyRecommendationCandidateService candidateService;
+
+    @Mock
+    private DailyRecommendationAnswerTracker tracker;
+
     private AnswerApplicationServiceImpl answerApplicationService;
 
     private static final Long ACCOUNT_ID = 1L;
@@ -112,7 +120,9 @@ class AnswerApplicationServiceTest {
                 answerMetricRepository,
                 abuseGuard,
                 props,
-                notificationOutboxRepository
+                notificationOutboxRepository,
+                candidateService,
+                tracker
         );
     }
 
